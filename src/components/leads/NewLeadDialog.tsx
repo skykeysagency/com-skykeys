@@ -32,7 +32,7 @@ export default function NewLeadDialog({ open, onClose, onCreated }: Props) {
     e.preventDefault();
     if (!user) return;
     setLoading(true);
-    const { error } = await supabase.from("leads").insert({ ...form, user_id: user.id });
+    const { error } = await supabase.from("leads").insert([{ ...form, user_id: user.id, status: form.status as "nouveau" | "contacte" | "rdv_planifie" | "proposition" | "gagne" | "perdu" }]);
     if (error) {
       toast.error("Erreur lors de la création du lead");
     } else {

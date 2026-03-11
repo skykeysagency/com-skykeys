@@ -231,7 +231,7 @@ function LeadsKanban({ leads, onRefresh }: any) {
   }));
 
   const handleDrop = async (leadId: string, newStatus: string) => {
-    await supabase.from("leads").update({ status: newStatus }).eq("id", leadId);
+    await supabase.from("leads").update({ status: newStatus as "nouveau" | "contacte" | "rdv_planifie" | "proposition" | "gagne" | "perdu" }).eq("id", leadId);
     onRefresh();
   };
 
