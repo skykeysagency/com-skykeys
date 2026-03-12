@@ -219,7 +219,7 @@ export default function ImportCSVDialog({ open, onClose, onImported }: Props) {
             ))}
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" size="sm" onClick={() => setStep("upload")}>Retour</Button>
-              <Button size="sm" onClick={() => setStep("preview")} disabled={!mapping.first_name && !mapping.last_name}>
+              <Button size="sm" onClick={() => setStep("preview")} disabled={!mapping.phone}>
                 Aperçu ({getMappedRows().length} leads)
               </Button>
             </div>
