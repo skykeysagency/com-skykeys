@@ -12,6 +12,7 @@ import {
 import { fr } from "date-fns/locale";
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, MapPin, User, Clock } from "lucide-react";
 import NewAppointmentDialog from "@/components/appointments/NewAppointmentDialog";
+import AppointmentDetailSheet from "@/components/appointments/AppointmentDetailSheet";
 
 type ViewMode = "month" | "week" | "day";
 
@@ -48,6 +49,8 @@ export default function CalendarPage() {
   const [showDialog, setShowDialog] = useState(false);
   const [prefilledStart, setPrefilledStart] = useState<string | undefined>();
   const [nowMinute, setNowMinute] = useState(new Date());
+  const [selectedAptId, setSelectedAptId] = useState<string | null>(null);
+  const [showDetail, setShowDetail] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -154,6 +157,7 @@ export default function CalendarPage() {
   };
 
   const openNewRdv = () => { setPrefilledStart(undefined); setShowDialog(true); };
+  const openAptDetail = (id: string) => { setSelectedAptId(id); setShowDetail(true); };
 
   const monthStart = startOfMonth(currentDate);
   const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
@@ -272,7 +276,7 @@ export default function CalendarPage() {
                           left: `calc(${leftPct}% + 3px)`,
                           width: `calc(${widthPct}% - 6px)`,
                         }}
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => { e.stopPropagation(); openAptDetail(apt.id); }}
                       >
                         <div className="px-2 py-1 h-full flex flex-col justify-start overflow-hidden">
                           <p className={`text-[11px] font-bold leading-tight truncate flex items-center gap-1 ${color.text}`}>
@@ -355,8 +359,8 @@ export default function CalendarPage() {
                   return (
                     <div
                       key={apt.id}
-                      onClick={(e) => e.stopPropagation()}
-                      className={`text-[11px] rounded-md px-1.5 py-0.5 truncate border-l-2 leading-tight font-semibold transition-colors ${color.bg} ${color.text} ${color.hover}`}
+                      onClick={(e) => { e.stopPropagation(); openAptDetail(apt.id); }}
+                      className={`text-[11px] rounded-md px-1.5 py-0.5 truncate border-l-2 leading-tight font-semibold transition-colors cursor-pointer ${color.bg} ${color.text} ${color.hover}`}
                     >
                       <span className="opacity-70">{format(parseISO(apt.start_at), "HH:mm")}</span>{" "}
                       {apt.title}
@@ -493,6 +497,13 @@ export default function CalendarPage() {
         onClose={() => { setShowDialog(false); setPrefilledStart(undefined); }}
         onCreated={fetchAppointments}
         defaultStartAt={prefilledStart}
+      />
+
+      <AppointmentDetailSheet
+        appointmentId={selectedAptId}
+        open={showDetail}
+        onClose={() => { setShowDetail(false); setSelectedAptId(null); }}
+        onDeleted={fetchAppointments}
       />
     </div>
   );
