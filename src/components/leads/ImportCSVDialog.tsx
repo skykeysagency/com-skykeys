@@ -11,10 +11,10 @@ import { Upload, FileText, CheckCircle, Loader2, AlertCircle } from "lucide-reac
 import { toast } from "sonner";
 
 const EXPECTED_FIELDS = [
-  { key: "first_name", label: "Prénom *", required: true },
-  { key: "last_name", label: "Nom *", required: true },
+  { key: "first_name", label: "Prénom", required: false },
+  { key: "last_name", label: "Nom", required: false },
   { key: "email", label: "Email" },
-  { key: "phone", label: "Téléphone" },
+  { key: "phone", label: "Téléphone *", required: true },
   { key: "company", label: "Entreprise" },
   { key: "position", label: "Poste" },
   { key: "website", label: "Site internet" },
@@ -108,7 +108,7 @@ export default function ImportCSVDialog({ open, onClose, onImported }: Props) {
         }
       });
       return obj;
-    }).filter((r) => r.first_name || r.last_name);
+    }).filter((r) => r.phone);
 
   const handleImport = async () => {
     if (!user) return;
@@ -219,7 +219,7 @@ export default function ImportCSVDialog({ open, onClose, onImported }: Props) {
             ))}
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" size="sm" onClick={() => setStep("upload")}>Retour</Button>
-              <Button size="sm" onClick={() => setStep("preview")} disabled={!mapping.first_name && !mapping.last_name}>
+              <Button size="sm" onClick={() => setStep("preview")} disabled={!mapping.phone}>
                 Aperçu ({getMappedRows().length} leads)
               </Button>
             </div>
