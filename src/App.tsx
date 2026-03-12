@@ -28,7 +28,6 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
             <Route path="/leads" element={<AppLayout><Leads /></AppLayout>} />
-            <Route path="/leads/import" element={<AppLayout><ImportCSV /></AppLayout>} />
             <Route path="/leads/:id" element={<AppLayout><LeadDetail /></AppLayout>} />
             <Route path="/calendar" element={<AppLayout><CalendarPage /></AppLayout>} />
             <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
