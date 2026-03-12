@@ -53,7 +53,37 @@ serve(async (req) => {
       );
     }
 
-    const { phone_number } = await req.json();
+    const body = await req.json();
+    const { phone_number, action } = body;
+
+    // --- Action: check if latest call is still active ---
+    if (action === "check_call_status") {
+      const aircallKey = profile.aircall_api_key as string;
+      const parts = aircallKey.split(":");
+      if (parts.length !== 2) {
+        return new Response(JSON.stringify({ error: "invalid_key_format" }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const [apiId, apiToken] = parts;
+      const encoded = btoa(`${apiId}:${apiToken}`);
+      const authBasic = `Basic ${encoded}`;
+
+      // GET /v1/calls?per_page=1&order=desc — most recent call
+      const callsRes = await fetch("https://api.aircall.io/v1/calls?per_page=1&order=desc", {
+        headers: { Authorization: authBasic },
+      });
+      const callsData = await callsRes.json().catch(() => ({}));
+      const latestCall = callsData?.calls?.[0];
+
+      // A call is "active" when ended_at is null/0 and status is not "done"
+      const isActive = latestCall && !latestCall.ended_at && latestCall.status !== "done";
+      return new Response(
+        JSON.stringify({ call_active: !!isActive, latest_call: latestCall }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (!phone_number) {
       return new Response(JSON.stringify({ error: "Missing phone_number" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
