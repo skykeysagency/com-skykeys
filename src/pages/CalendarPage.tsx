@@ -49,6 +49,8 @@ export default function CalendarPage() {
   const [showDialog, setShowDialog] = useState(false);
   const [prefilledStart, setPrefilledStart] = useState<string | undefined>();
   const [nowMinute, setNowMinute] = useState(new Date());
+  const [selectedAptId, setSelectedAptId] = useState<string | null>(null);
+  const [showDetail, setShowDetail] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
