@@ -498,6 +498,13 @@ export default function CalendarPage() {
         onCreated={fetchAppointments}
         defaultStartAt={prefilledStart}
       />
+
+      <AppointmentDetailSheet
+        appointmentId={selectedAptId}
+        open={showDetail}
+        onClose={() => { setShowDetail(false); setSelectedAptId(null); }}
+        onDeleted={fetchAppointments}
+      />
     </div>
   );
 }
