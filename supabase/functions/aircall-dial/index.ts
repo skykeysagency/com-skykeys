@@ -143,7 +143,7 @@ serve(async (req) => {
 
     // 204 = success (no body)
     if (callRes.status === 204) {
-      return new Response(JSON.stringify({ success: true }), {
+      return new Response(JSON.stringify({ success: true, aircall_status: 204 }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -151,9 +151,11 @@ serve(async (req) => {
     const callData = await callRes.json().catch(() => ({}));
     console.error("Call error:", callRes.status, callData);
 
+    // Always return 200 so the client can handle Aircall errors gracefully
+    // (non-2xx from edge function causes supabase.functions.invoke to throw)
     return new Response(
-      JSON.stringify({ error: "aircall_call_error", status: callRes.status, details: callData }),
-      { status: callRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "aircall_call_error", aircall_status: callRes.status, details: callData }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (err) {
