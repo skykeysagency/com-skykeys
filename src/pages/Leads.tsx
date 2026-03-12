@@ -157,6 +157,14 @@ export default function Leads() {
 
       <NewLeadDialog open={showNewLead} onClose={() => setShowNewLead(false)} onCreated={fetchLeads} />
       <ImportCSVDialog open={showImport} onClose={() => setShowImport(false)} onImported={fetchLeads} />
+
+      {callModeLeads && (
+        <CallMode
+          leads={callModeLeads}
+          onClose={() => setCallModeLeads(null)}
+          onLeadUpdated={fetchLeads}
+        />
+      )}
     </div>
   );
 }
