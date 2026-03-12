@@ -116,7 +116,7 @@ export default function Auth() {
           </div>
 
           <p className="mt-8 text-xs" style={{ color: "hsl(220 15% 40%)" }}>
-            © 2024 CommercialCRM — Tous droits réservés
+            © 2024 Sky Call — Tous droits réservés
           </p>
         </div>
       </div>
