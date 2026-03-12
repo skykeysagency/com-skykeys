@@ -42,9 +42,9 @@ export default function Sidebar() {
   return (
     <aside className="hidden md:flex flex-col w-[220px] shrink-0 min-h-screen gradient-sidebar text-sidebar-foreground border-r border-sidebar-border">
       {/* ── Logo ── */}
-      <div className="flex items-center gap-2 px-5 pt-6 pb-5">
-        <img src={skyCallLogo} alt="Sky Call" className="w-8 h-8 object-contain shrink-0" />
-        <span className="font-bold text-sm text-sidebar-accent-foreground tracking-tight">Sky Call</span>
+      <div className="flex items-center gap-1 px-3 pt-4 pb-4">
+        <img src={skyCallLogo} alt="Sky Call" className="w-12 h-12 object-contain shrink-0 mix-blend-screen" />
+        <span className="font-bold text-sm text-sidebar-accent-foreground tracking-tight -ml-1">Sky Call</span>
       </div>
 
       {/* ── Separator ── */}
