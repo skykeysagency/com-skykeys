@@ -371,6 +371,17 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
               </p>
             </div>
 
+            {/* Remote hangup alert */}
+            {remoteHungUp && (
+              <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-destructive/10 border border-destructive/30 animate-pulse">
+                <PhoneOff className="w-5 h-5 text-destructive shrink-0" />
+                <div>
+                  <p className="font-semibold text-destructive text-sm">Le contact a raccroché</p>
+                  <p className="text-xs text-muted-foreground">Passage au résumé de l'appel…</p>
+                </div>
+              </div>
+            )}
+
             {/* Call status indicator */}
             {callStatus === "dialing" && (
               <div className="flex items-center gap-2 text-amber-600 font-medium text-sm animate-pulse">
