@@ -5,20 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { TrendingUp, Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
+import { TrendingUp, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 
-type Mode = "login" | "signup" | "forgot";
+type Mode = "login" | "forgot";
 
 export default function Auth() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>("login");
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-    firstName: "",
-    lastName: "",
-  });
+  const [form, setForm] = useState({ email: "", password: "" });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -31,31 +26,8 @@ export default function Auth() {
       email: form.email,
       password: form.password,
     });
-    if (error) {
-      toast.error(error.message);
-    } else {
-      navigate("/");
-    }
-    setLoading(false);
-  };
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: { first_name: form.firstName, last_name: form.lastName },
-      },
-    });
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Compte créé ! Vérifiez votre email pour confirmer.");
-      setMode("login");
-    }
+    if (error) toast.error("Email ou mot de passe incorrect.");
+    else navigate("/");
     setLoading(false);
   };
 
@@ -65,12 +37,8 @@ export default function Auth() {
     const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Email de réinitialisation envoyé !");
-      setMode("login");
-    }
+    if (error) toast.error(error.message);
+    else { toast.success("Email de réinitialisation envoyé !"); setMode("login"); }
     setLoading(false);
   };
 
@@ -152,63 +120,10 @@ export default function Auth() {
                     Mot de passe oublié ?
                   </button>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full shadow-primary" disabled={loading}>
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Se connecter <ArrowRight className="w-4 h-4 ml-1" /></>}
                 </Button>
               </form>
-              <p className="text-center text-sm text-muted-foreground mt-6">
-                Pas encore de compte ?{" "}
-                <button onClick={() => setMode("signup")} className="text-primary font-medium hover:underline">
-                  Créer un compte
-                </button>
-              </p>
-            </>
-          )}
-
-          {mode === "signup" && (
-            <>
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-foreground">Créer un compte</h2>
-                <p className="text-muted-foreground mt-1">Rejoignez votre équipe commerciale</p>
-              </div>
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="firstName">Prénom</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input id="firstName" name="firstName" placeholder="Jean" className="pl-9" value={form.firstName} onChange={handleChange} required />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="lastName">Nom</Label>
-                    <Input id="lastName" name="lastName" placeholder="Dupont" value={form.lastName} onChange={handleChange} required />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="email-signup">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input id="email-signup" name="email" type="email" placeholder="vous@exemple.com" className="pl-9" value={form.email} onChange={handleChange} required />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="password-signup">Mot de passe</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input id="password-signup" name="password" type="password" placeholder="Min. 6 caractères" className="pl-9" value={form.password} onChange={handleChange} required minLength={6} />
-                  </div>
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Créer mon compte <ArrowRight className="w-4 h-4 ml-1" /></>}
-                </Button>
-              </form>
-              <p className="text-center text-sm text-muted-foreground mt-6">
-                Déjà un compte ?{" "}
-                <button onClick={() => setMode("login")} className="text-primary font-medium hover:underline">
-                  Se connecter
-                </button>
-              </p>
             </>
           )}
 
@@ -226,7 +141,7 @@ export default function Auth() {
                     <Input id="email-forgot" name="email" type="email" placeholder="vous@exemple.com" className="pl-9" value={form.email} onChange={handleChange} required />
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full shadow-primary" disabled={loading}>
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Envoyer le lien"}
                 </Button>
               </form>
