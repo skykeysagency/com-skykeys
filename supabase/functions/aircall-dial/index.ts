@@ -56,20 +56,19 @@ serve(async (req) => {
     const body = await req.json();
     const { phone_number, action } = body;
 
+    const aircallKey = profile.aircall_api_key as string;
+    const parts = aircallKey.split(":");
+    if (parts.length !== 2) {
+      return new Response(JSON.stringify({ error: "invalid_key_format" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const [apiId, apiToken] = parts;
+    const encoded = btoa(`${apiId}:${apiToken}`);
+    const authBasic = `Basic ${encoded}`;
+
     // --- Action: check if latest call is still active ---
     if (action === "check_call_status") {
-      const aircallKey = profile.aircall_api_key as string;
-      const parts = aircallKey.split(":");
-      if (parts.length !== 2) {
-        return new Response(JSON.stringify({ error: "invalid_key_format" }), {
-          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const [apiId, apiToken] = parts;
-      const encoded = btoa(`${apiId}:${apiToken}`);
-      const authBasic = `Basic ${encoded}`;
-
-      // GET /v1/calls?per_page=1&order=desc — most recent call
       const callsRes = await fetch("https://api.aircall.io/v1/calls?per_page=1&order=desc", {
         headers: { Authorization: authBasic },
       });
@@ -80,6 +79,25 @@ serve(async (req) => {
       const isActive = latestCall && !latestCall.ended_at && latestCall.status !== "done";
       return new Response(
         JSON.stringify({ call_active: !!isActive, latest_call: latestCall }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // --- Action: hang up an active call ---
+    if (action === "hangup_call") {
+      const { call_id } = body;
+      if (!call_id) {
+        return new Response(JSON.stringify({ error: "missing_call_id" }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const hangupRes = await fetch(`https://api.aircall.io/v1/calls/${call_id}`, {
+        method: "DELETE",
+        headers: { Authorization: authBasic },
+      });
+      console.log("Hangup response:", hangupRes.status);
+      return new Response(
+        JSON.stringify({ success: hangupRes.ok, hangup_status: hangupRes.status }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
