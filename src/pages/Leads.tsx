@@ -10,13 +10,14 @@ import {
 } from "@/components/ui/table";
 import {
   Plus, Search, Upload, LayoutGrid, List, Phone, Mail,
-  ChevronUp, ChevronDown, Globe, Loader2
+  ChevronUp, ChevronDown, Globe, Loader2, PhoneCall
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import NewLeadDialog from "@/components/leads/NewLeadDialog";
 import ImportCSVDialog from "@/components/leads/ImportCSVDialog";
+import CallMode from "@/components/calls/CallMode";
 
 type SortDir = "asc" | "desc";
 
@@ -32,6 +33,7 @@ export default function Leads() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [showNewLead, setShowNewLead] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [callModeLeads, setCallModeLeads] = useState<any[] | null>(null);
 
   useEffect(() => {
     fetchLeads();
@@ -85,6 +87,21 @@ export default function Leads() {
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowImport(true)}>
             <Upload className="w-4 h-4" /> Import CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 text-green-700 border-green-500/40 hover:bg-green-50"
+            onClick={() => {
+              const leadsWithPhone = filtered.filter((l) => l.phone);
+              if (leadsWithPhone.length === 0) {
+                import("sonner").then(({ toast }) => toast.error("Aucun lead avec un numéro de téléphone dans la sélection actuelle."));
+                return;
+              }
+              setCallModeLeads(leadsWithPhone);
+            }}
+          >
+            <PhoneCall className="w-4 h-4" /> Mode appel ({filtered.filter(l => l.phone).length})
           </Button>
           <Button size="sm" className="gap-2" onClick={() => setShowNewLead(true)}>
             <Plus className="w-4 h-4" /> Nouveau lead
@@ -140,6 +157,14 @@ export default function Leads() {
 
       <NewLeadDialog open={showNewLead} onClose={() => setShowNewLead(false)} onCreated={fetchLeads} />
       <ImportCSVDialog open={showImport} onClose={() => setShowImport(false)} onImported={fetchLeads} />
+
+      {callModeLeads && (
+        <CallMode
+          leads={callModeLeads}
+          onClose={() => setCallModeLeads(null)}
+          onLeadUpdated={fetchLeads}
+        />
+      )}
     </div>
   );
 }
