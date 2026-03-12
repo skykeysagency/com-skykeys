@@ -40,6 +40,7 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
   const [callLogged, setCallLogged] = useState(false);
   const [muted, setMuted] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const lead = leads[index];
   const isFirst = index === 0;
