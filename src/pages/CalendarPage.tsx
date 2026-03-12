@@ -12,6 +12,7 @@ import {
 import { fr } from "date-fns/locale";
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, MapPin, User, Clock } from "lucide-react";
 import NewAppointmentDialog from "@/components/appointments/NewAppointmentDialog";
+import AppointmentDetailSheet from "@/components/appointments/AppointmentDetailSheet";
 
 type ViewMode = "month" | "week" | "day";
 
