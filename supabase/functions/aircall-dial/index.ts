@@ -102,6 +102,7 @@ serve(async (req) => {
       );
     }
 
+    // Only dial actions need a phone number
     if (!phone_number) {
       return new Response(JSON.stringify({ error: "Missing phone_number" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
