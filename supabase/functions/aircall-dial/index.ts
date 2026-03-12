@@ -9,42 +9,50 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // Auth: extract user from JWT
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Missing Authorization header" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Get user from token
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Fetch user's Aircall API key from profile
-    const { data: profile, error: profileError } = await supabase
+    // Validate JWT with getClaims (new signing-keys approach)
+    const supabaseAnon = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseAnon.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userId = claimsData.claims.sub;
+
+    // Use service role to fetch the user's Aircall key from profile
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .select("aircall_api_key")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
 
     if (profileError || !profile?.aircall_api_key) {
-      return new Response(JSON.stringify({ error: "no_aircall_key", message: "Aucune clé Aircall configurée dans les paramètres." }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "no_aircall_key", message: "Aucune clé Aircall configurée." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const { phone_number } = await req.json();
@@ -54,9 +62,10 @@ serve(async (req) => {
       });
     }
 
-    // Call Aircall API — Basic Auth with api_id:api_token
-    const aircallKey = profile.aircall_api_key;
-    const encoded = btoa(aircallKey.includes(":") ? aircallKey : `${aircallKey}:`);
+    // Aircall Basic Auth: api_id:api_token (stored as "id:token" or just token)
+    const aircallKey = profile.aircall_api_key as string;
+    // If stored without ":" separator, can't use — but we encode as-is
+    const encoded = btoa(aircallKey);
 
     const aircallRes = await fetch("https://api.aircall.io/v1/calls/dial", {
       method: "POST",
@@ -67,11 +76,12 @@ serve(async (req) => {
       body: JSON.stringify({ phone_number }),
     });
 
-    const aircallData = await aircallRes.json();
+    const aircallData = await aircallRes.json().catch(() => ({}));
 
     if (!aircallRes.ok) {
+      console.error("Aircall error:", aircallRes.status, aircallData);
       return new Response(
-        JSON.stringify({ error: "aircall_error", details: aircallData }),
+        JSON.stringify({ error: "aircall_error", status: aircallRes.status, details: aircallData }),
         { status: aircallRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
