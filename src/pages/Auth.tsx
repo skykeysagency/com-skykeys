@@ -75,7 +75,7 @@ export default function Auth() {
               style={{ background: "var(--gradient-primary)", boxShadow: "0 4px 20px hsl(234 89% 60% / 0.4)" }}>
               <TrendingUp className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-white tracking-tight">CommercialCRM</span>
+            <span className="text-xl font-bold text-white tracking-tight">Sky Call</span>
           </div>
 
           {/* Hero text */}
@@ -116,7 +116,7 @@ export default function Auth() {
           </div>
 
           <p className="mt-8 text-xs" style={{ color: "hsl(220 15% 40%)" }}>
-            © 2024 CommercialCRM — Tous droits réservés
+            © 2024 Sky Call — Tous droits réservés
           </p>
         </div>
       </div>
@@ -134,7 +134,7 @@ export default function Auth() {
               style={{ background: "var(--gradient-primary)" }}>
               <TrendingUp className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-lg text-foreground">CommercialCRM</span>
+            <span className="font-bold text-lg text-foreground">Sky Call</span>
           </div>
 
           {mode === "login" && (

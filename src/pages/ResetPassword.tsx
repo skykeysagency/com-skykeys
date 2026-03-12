@@ -32,7 +32,7 @@ export default function ResetPassword() {
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
             <TrendingUp className="w-4 h-4 text-white" />
           </div>
-          <span className="font-bold text-lg">CommercialCRM</span>
+          <span className="font-bold text-lg">Sky Call</span>
         </div>
         <h2 className="text-2xl font-bold mb-2">Nouveau mot de passe</h2>
         <p className="text-muted-foreground mb-8">Choisissez un nouveau mot de passe sécurisé</p>
