@@ -75,7 +75,7 @@ export default function Auth() {
               style={{ background: "var(--gradient-primary)", boxShadow: "0 4px 20px hsl(234 89% 60% / 0.4)" }}>
               <TrendingUp className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-white tracking-tight">CommercialCRM</span>
+            <span className="text-xl font-bold text-white tracking-tight">Sky Call</span>
           </div>
 
           {/* Hero text */}
