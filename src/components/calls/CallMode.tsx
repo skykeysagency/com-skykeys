@@ -92,18 +92,32 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
         body: { phone_number: lead.phone },
         headers: { Authorization: `Bearer ${session?.access_token}` },
       });
+
+      const data = res.data;
+      const httpStatus = data?.status;
+
       if (res.error) throw res.error;
-      if (res.data?.error === "no_aircall_key") {
-        toast.error("Configurez votre clé Aircall dans les Paramètres pour le click-to-call.", { duration: 5000 });
-        // Fallback to tel: link
+
+      if (data?.error === "no_aircall_key") {
+        toast.error("Configurez votre clé Aircall dans les Paramètres pour le click-to-call.", { duration: 6000 });
         window.open(`tel:${lead.phone}`);
-      } else if (res.data?.error) {
-        toast.error("Erreur Aircall — appel lancé via votre téléphone");
+      } else if (httpStatus === 405 || data?.details?.troubleshoot?.toLowerCase().includes("unavailable")) {
+        // 405 = user not available in Aircall Phone app
+        toast.warning(
+          "Votre téléphone Aircall n'est pas disponible. Ouvrez l'application Aircall Phone et passez en statut « Disponible », puis réessayez.",
+          { duration: 8000 }
+        );
+        setCallStatus("idle");
+        return;
+      } else if (data?.error) {
+        const detail = data?.details?.message || data?.error;
+        toast.error(`Erreur Aircall : ${detail} — appel via téléphone`, { duration: 5000 });
         window.open(`tel:${lead.phone}`);
       } else {
-        toast.success(`Appel lancé vers ${lead.phone}`);
+        toast.success(`📞 Appel lancé vers ${lead.phone} — décrochez Aircall Phone`, { duration: 4000 });
       }
     } catch {
+      toast.error("Impossible de contacter Aircall — appel via téléphone");
       window.open(`tel:${lead.phone}`);
     }
     setCallStatus("in_call");
