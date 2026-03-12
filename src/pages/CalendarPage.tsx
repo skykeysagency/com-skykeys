@@ -276,7 +276,7 @@ export default function CalendarPage() {
                           left: `calc(${leftPct}% + 3px)`,
                           width: `calc(${widthPct}% - 6px)`,
                         }}
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => { e.stopPropagation(); openAptDetail(apt.id); }}
                       >
                         <div className="px-2 py-1 h-full flex flex-col justify-start overflow-hidden">
                           <p className={`text-[11px] font-bold leading-tight truncate flex items-center gap-1 ${color.text}`}>
