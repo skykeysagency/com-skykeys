@@ -9,10 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge, LEAD_STATUSES } from "@/lib/leadStatus";
 import { toast } from "sonner";
+import { useRole } from "@/hooks/useRole";
 import {
   ArrowLeft, Phone, Mail, Globe, Building, User, Loader2,
   PhoneCall, MessageSquare, Calendar, Clock, Send, Edit3, Check, X,
-  MapPin, Tag
+  MapPin, Tag, UserCheck,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -22,6 +23,7 @@ export default function LeadDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isAdmin } = useRole();
   const [lead, setLead] = useState<any>(null);
   const [activities, setActivities] = useState<any[]>([]);
   const [calls, setCalls] = useState<any[]>([]);
@@ -353,6 +355,31 @@ export default function LeadDetail() {
                     </div>
                   </div>
                 ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ── Convertir en client (admin only) ── */}
+          {isAdmin && (
+            <Card className="border-emerald-200 bg-emerald-50/50 shadow-card">
+              <CardContent className="p-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+                    <UserCheck className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-900">Convertir en client</p>
+                    <p className="text-xs text-emerald-700/70">Envoie les données de ce lead vers votre CRM externe.</p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm shrink-0"
+                  onClick={() => {/* action à connecter */}}
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  Convertir
+                </Button>
               </CardContent>
             </Card>
           )}
