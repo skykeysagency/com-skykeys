@@ -71,11 +71,8 @@ export default function Auth() {
 
         <div className="relative z-10 flex flex-col h-full p-12">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: "var(--gradient-primary)", boxShadow: "0 4px 20px hsl(234 89% 60% / 0.4)" }}>
-              <TrendingUp className="w-5 h-5 text-white" />
-            </div>
+          <div className="flex items-center gap-2">
+            <img src={skyCallLogo} alt="Sky Call" className="w-10 h-10 object-contain" />
             <span className="text-xl font-bold text-white tracking-tight">Sky Call</span>
           </div>
 
