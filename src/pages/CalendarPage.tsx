@@ -157,6 +157,7 @@ export default function CalendarPage() {
   };
 
   const openNewRdv = () => { setPrefilledStart(undefined); setShowDialog(true); };
+  const openAptDetail = (id: string) => { setSelectedAptId(id); setShowDetail(true); };
 
   const monthStart = startOfMonth(currentDate);
   const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
