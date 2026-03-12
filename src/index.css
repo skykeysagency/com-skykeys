@@ -1,68 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 220 25% 12%;
+    /* ── Background ── */
+    --background: 220 22% 96%;
+    --foreground: 222 47% 11%;
+
+    /* ── Card / Popover ── */
     --card: 0 0% 100%;
-    --card-foreground: 220 25% 12%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 12%;
-    --primary: 221 83% 53%;
+    --popover-foreground: 222 47% 11%;
+
+    /* ── Primary — Indigo vif ── */
+    --primary: 234 89% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 93%;
-    --secondary-foreground: 220 25% 20%;
-    --muted: 220 14% 93%;
-    --muted-foreground: 220 15% 50%;
-    --accent: 221 83% 96%;
-    --accent-foreground: 221 83% 40%;
+    --primary-glow: 250 95% 72%;
+
+    /* ── Secondary ── */
+    --secondary: 220 16% 92%;
+    --secondary-foreground: 222 30% 20%;
+
+    /* ── Muted ── */
+    --muted: 220 16% 92%;
+    --muted-foreground: 220 13% 52%;
+
+    /* ── Accent ── */
+    --accent: 234 89% 96%;
+    --accent-foreground: 234 89% 40%;
+
+    /* ── Destructive ── */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 88%;
-    --input: 220 13% 88%;
-    --ring: 221 83% 53%;
-    --radius: 0.5rem;
 
-    --sidebar-background: 220 25% 12%;
-    --sidebar-foreground: 220 20% 85%;
-    --sidebar-primary: 221 83% 53%;
+    /* ── Border / Input / Ring ── */
+    --border: 220 16% 87%;
+    --input: 220 16% 87%;
+    --ring: 234 89% 60%;
+
+    /* ── Radius ── */
+    --radius: 0.625rem;
+
+    /* ── Sidebar ── */
+    --sidebar-background: 225 35% 11%;
+    --sidebar-foreground: 220 20% 72%;
+    --sidebar-primary: 234 89% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 18%;
-    --sidebar-accent-foreground: 220 20% 90%;
-    --sidebar-border: 220 20% 20%;
-    --sidebar-ring: 221 83% 53%;
+    --sidebar-accent: 225 30% 17%;
+    --sidebar-accent-foreground: 220 20% 92%;
+    --sidebar-border: 225 25% 17%;
+    --sidebar-ring: 234 89% 60%;
+
+    /* ── Custom tokens ── */
+    --shadow-card: 0 1px 3px 0 hsl(222 47% 11% / 0.06), 0 1px 2px -1px hsl(222 47% 11% / 0.06);
+    --shadow-card-hover: 0 4px 12px 0 hsl(222 47% 11% / 0.1), 0 2px 4px -2px hsl(222 47% 11% / 0.08);
+    --shadow-primary: 0 4px 14px 0 hsl(234 89% 60% / 0.25);
+    --gradient-primary: linear-gradient(135deg, hsl(234 89% 60%), hsl(250 95% 68%));
+    --gradient-sidebar: linear-gradient(180deg, hsl(225 35% 12%) 0%, hsl(222 40% 9%) 100%);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 221 83% 60%;
+    --background: 222 47% 7%;
+    --foreground: 210 40% 96%;
+    --card: 222 40% 10%;
+    --card-foreground: 210 40% 96%;
+    --popover: 222 40% 10%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 234 89% 65%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 221 83% 53%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 221 83% 53%;
+    --primary-glow: 250 95% 75%;
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 60%;
+    --accent: 217 32% 17%;
+    --accent-foreground: 210 40% 96%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 96%;
+    --border: 217 32% 18%;
+    --input: 217 32% 18%;
+    --ring: 234 89% 60%;
+    --sidebar-background: 224 40% 7%;
+    --sidebar-foreground: 220 15% 65%;
+    --sidebar-primary: 234 89% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 221 83% 53%;
+    --sidebar-accent: 224 35% 13%;
+    --sidebar-accent-foreground: 220 15% 90%;
+    --sidebar-border: 224 30% 13%;
+    --sidebar-ring: 234 89% 65%;
   }
 }
 
@@ -70,16 +99,34 @@
   * {
     @apply border-border;
   }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: "cv11", "ss01";
   }
 }
 
-/* CRM Status badge colors */
-.status-nouveau { background-color: hsl(217 91% 95%); color: hsl(217 91% 38%); }
-.status-contacte { background-color: hsl(38 92% 93%); color: hsl(38 60% 35%); }
-.status-rdv_planifie { background-color: hsl(262 83% 95%); color: hsl(262 83% 42%); }
-.status-proposition { background-color: hsl(24 95% 93%); color: hsl(24 80% 38%); }
-.status-gagne { background-color: hsl(142 71% 90%); color: hsl(142 71% 28%); }
-.status-perdu { background-color: hsl(0 84% 93%); color: hsl(0 84% 38%); }
+@layer utilities {
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-card-hover { box-shadow: var(--shadow-card-hover); }
+  .shadow-primary { box-shadow: var(--shadow-primary); }
+  .gradient-primary { background: var(--gradient-primary); }
+  .gradient-sidebar { background: var(--gradient-sidebar); }
+
+  /* Smooth scrollbar */
+  .scrollbar-thin::-webkit-scrollbar { width: 4px; height: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 9999px; }
+}
+
+/* ── Pipeline status badges ── */
+.status-nouveau       { background: hsl(234 89% 95%); color: hsl(234 89% 40%); border: 1px solid hsl(234 89% 85%); }
+.status-contacte      { background: hsl(38 92% 93%);  color: hsl(38 60% 32%);  border: 1px solid hsl(38 75% 82%); }
+.status-rdv_planifie  { background: hsl(262 83% 95%); color: hsl(262 83% 40%); border: 1px solid hsl(262 70% 84%); }
+.status-proposition   { background: hsl(24 95% 93%);  color: hsl(24 80% 35%);  border: 1px solid hsl(24 85% 82%); }
+.status-gagne         { background: hsl(142 71% 90%); color: hsl(142 71% 25%); border: 1px solid hsl(142 60% 78%); }
+.status-perdu         { background: hsl(0 84% 94%);   color: hsl(0 84% 38%);   border: 1px solid hsl(0 70% 84%); }
