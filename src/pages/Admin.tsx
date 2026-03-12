@@ -18,8 +18,8 @@ import {
 import { toast } from "sonner";
 import {
   ShieldCheck, Users, CalendarDays, Plus, Pencil, Trash2,
-  Loader2, Search, ChevronRight, Building2, Phone, Mail,
-  Clock, MapPin, User, ExternalLink,
+  Loader2, Search, Building2, Phone, Mail,
+  Clock, MapPin, User, ExternalLink, UserPlus, Lock,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -94,6 +94,12 @@ export default function AdminPage() {
   const [aptForm, setAptForm] = useState(EMPTY_APT);
   const [savingApt, setSavingApt] = useState(false);
   const [deletingAptId, setDeletingAptId] = useState<string | null>(null);
+
+  // ── User creation state ────────────────────────────
+  const EMPTY_USER_FORM = { email: "", password: "", first_name: "", last_name: "", role: "commercial" as "admin" | "manager" | "commercial" };
+  const [userDialog, setUserDialog] = useState(false);
+  const [userForm, setUserForm] = useState(EMPTY_USER_FORM);
+  const [savingUser, setSavingUser] = useState(false);
 
   useEffect(() => {
     if (!loadingRole && !isManager) navigate("/", { replace: true });
@@ -217,6 +223,29 @@ export default function AdminPage() {
     setDeletingAptId(null);
   };
 
+  // ── Create user ────────────────────────────────────
+  const saveUser = async () => {
+    setSavingUser(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.access_token}`,
+      },
+      body: JSON.stringify(userForm),
+    });
+    const result = await resp.json();
+    if (!resp.ok) {
+      toast.error(result.error ?? "Erreur lors de la création");
+    } else {
+      toast.success(`Compte créé pour ${userForm.email}`);
+      setUserDialog(false);
+      setUserForm(EMPTY_USER_FORM);
+    }
+    setSavingUser(false);
+  };
+
   // ── Filters ────────────────────────────────────────
   const filteredLeads = leads.filter((l) => {
     const q = leadSearch.toLowerCase();
@@ -276,6 +305,9 @@ export default function AdminPage() {
             <TabsTrigger value="appointments" className="gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
               <CalendarDays className="w-4 h-4" /> Rendez-vous
               <span className="ml-1 text-[11px] font-bold text-muted-foreground">({appointments.length})</span>
+            </TabsTrigger>
+            <TabsTrigger value="users" className="gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <UserPlus className="w-4 h-4" /> Utilisateurs
             </TabsTrigger>
           </TabsList>
 
@@ -493,6 +525,33 @@ export default function AdminPage() {
               </div>
             )}
           </TabsContent>
+
+          {/* ── USERS TAB ── */}
+          <TabsContent value="users">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Comptes utilisateurs</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">L'inscription publique est désactivée — seul l'admin peut créer des comptes.</p>
+              </div>
+              <Button size="sm" className="gap-1.5 shadow-primary text-xs font-semibold" onClick={() => setUserDialog(true)}>
+                <UserPlus className="w-3.5 h-3.5" /> Créer un compte
+              </Button>
+            </div>
+
+            <div className="rounded-xl border border-dashed border-border bg-muted/20 p-10 flex flex-col items-center justify-center gap-3 text-center">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <UserPlus className="w-6 h-6 text-primary" />
+              </div>
+              <p className="text-sm font-semibold text-foreground">Accès sur invitation uniquement</p>
+              <p className="text-xs text-muted-foreground max-w-xs">
+                Cliquez sur "Créer un compte" pour inviter un commercial ou un manager. Ils pourront se connecter immédiatement avec les identifiants fournis.
+              </p>
+              <Button size="sm" variant="outline" className="mt-2 gap-1.5 text-xs" onClick={() => setUserDialog(true)}>
+                <UserPlus className="w-3.5 h-3.5" /> Créer un premier compte
+              </Button>
+            </div>
+          </TabsContent>
+
         </Tabs>
       </div>
 
@@ -671,6 +730,62 @@ export default function AdminPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Create user dialog ── */}
+      <Dialog open={userDialog} onOpenChange={(o) => !o && setUserDialog(false)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shadow-primary">
+                <UserPlus className="w-4 h-4 text-primary-foreground" />
+              </div>
+              Créer un compte utilisateur
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Prénom">
+                <Input placeholder="Jean" value={userForm.first_name} onChange={(e) => setUserForm({ ...userForm, first_name: e.target.value })} />
+              </Field>
+              <Field label="Nom">
+                <Input placeholder="Dupont" value={userForm.last_name} onChange={(e) => setUserForm({ ...userForm, last_name: e.target.value })} />
+              </Field>
+            </div>
+            <Field label="Email *">
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input type="email" placeholder="jean@société.fr" className="pl-9" value={userForm.email} onChange={(e) => setUserForm({ ...userForm, email: e.target.value })} />
+              </div>
+            </Field>
+            <Field label="Mot de passe *">
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input type="password" placeholder="Min. 6 caractères" className="pl-9" minLength={6} value={userForm.password} onChange={(e) => setUserForm({ ...userForm, password: e.target.value })} />
+              </div>
+            </Field>
+            <Field label="Rôle">
+              <Select value={userForm.role} onValueChange={(v) => setUserForm({ ...userForm, role: v as "admin" | "manager" | "commercial" })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="commercial">Commercial</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="admin">Administrateur</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setUserDialog(false)}>Annuler</Button>
+            <Button
+              disabled={savingUser || !userForm.email || !userForm.password}
+              onClick={saveUser}
+              className="shadow-primary"
+            >
+              {savingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : "Créer le compte"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
