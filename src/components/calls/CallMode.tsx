@@ -40,6 +40,7 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
   const [callLogged, setCallLogged] = useState(false);
   const [muted, setMuted] = useState(false);
   const [remoteHungUp, setRemoteHungUp] = useState(false);
+  const [aircallCallId, setAircallCallId] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -88,6 +89,7 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
       setCallNote("");
       setOutcome("");
       setCallLogged(false);
+      setAircallCallId(null);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [index, lead?.id]);
@@ -117,6 +119,9 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
             body: { action: "check_call_status" },
             headers: { Authorization: `Bearer ${session?.access_token}` },
           });
+          if (res.data?.latest_call?.id && !aircallCallId) {
+            setAircallCallId(res.data.latest_call.id);
+          }
           if (res.data?.call_active === false) {
             // Remote party hung up
             setRemoteHungUp(true);
@@ -185,7 +190,19 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
     setCallDuration(0);
   };
 
-  const handleEndCall = () => {
+  const handleEndCall = async () => {
+    // Tell Aircall to actually hang up the call
+    if (aircallCallId) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        await supabase.functions.invoke("aircall-dial", {
+          body: { action: "hangup_call", call_id: aircallCallId },
+          headers: { Authorization: `Bearer ${session?.access_token}` },
+        });
+      } catch {
+        // Silently ignore — we still update local state
+      }
+    }
     setCallStatus("ended");
   };
 
