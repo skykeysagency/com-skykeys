@@ -119,7 +119,13 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
           });
           if (res.data?.call_active === false) {
             // Remote party hung up
-            setCallStatus("ended");
+            setRemoteHungUp(true);
+            playHangupSound();
+            toast.warning("📵 Le contact a raccroché", { duration: 5000 });
+            setTimeout(() => {
+              setRemoteHungUp(false);
+              setCallStatus("ended");
+            }, 2500);
           }
         } catch {
           // Silently ignore polling errors
