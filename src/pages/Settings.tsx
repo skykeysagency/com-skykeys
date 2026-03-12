@@ -100,12 +100,13 @@ export default function Settings() {
               placeholder="Votre clé API Aircall..."
             />
           </div>
-          <div className="p-3 bg-accent rounded-lg">
-            <p className="text-xs text-accent-foreground font-medium mb-1">Comment obtenir votre clé API ?</p>
+          <div className="p-3 bg-accent rounded-lg space-y-2">
+            <p className="text-xs text-accent-foreground font-medium">Format requis : <code className="bg-background px-1 py-0.5 rounded text-xs font-mono">api_id:api_token</code></p>
             <ol className="text-xs text-muted-foreground space-y-0.5 list-decimal list-inside">
               <li>Connectez-vous à <a href="https://dashboard.aircall.io" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">dashboard.aircall.io</a></li>
-              <li>Allez dans Intégrations → API</li>
-              <li>Créez une nouvelle clé API et copiez-la ici</li>
+              <li>Allez dans <strong>Intégrations → API Keys</strong></li>
+              <li>Copiez l'<strong>API ID</strong> et l'<strong>API Token</strong></li>
+              <li>Saisissez : <code className="bg-background px-1 rounded font-mono">votre_api_id:votre_api_token</code></li>
             </ol>
           </div>
           {form.aircall_api_key && (
