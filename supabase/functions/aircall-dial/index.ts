@@ -73,16 +73,52 @@ serve(async (req) => {
     const encoded = btoa(`${apiId}:${apiToken}`);
     const authBasic = `Basic ${encoded}`;
 
-    // Step 1: Get available phone numbers for this account
+    // Step 1: Ping to validate credentials
+    const pingRes = await fetch("https://api.aircall.io/v1/ping", {
+      headers: { Authorization: authBasic },
+    });
+    const pingData = await pingRes.json().catch(() => ({}));
+    console.log("Ping response:", pingRes.status, JSON.stringify(pingData));
+
+    if (!pingRes.ok) {
+      return new Response(
+        JSON.stringify({ error: "aircall_auth_error", status: pingRes.status, details: pingData }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Step 2: Get the Aircall user (me) to get real user_id
+    const meRes = await fetch("https://api.aircall.io/v1/users/me", {
+      headers: { Authorization: authBasic },
+    });
+    const meData = await meRes.json().catch(() => ({}));
+    console.log("Users/me response:", meRes.status, JSON.stringify(meData));
+
+    if (!meRes.ok) {
+      return new Response(
+        JSON.stringify({ error: "aircall_user_error", status: meRes.status, details: meData }),
+        { status: meRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const aircallUserId = meData?.user?.id;
+    if (!aircallUserId) {
+      return new Response(
+        JSON.stringify({ error: "no_aircall_user_id", message: "Impossible de récupérer l'ID utilisateur Aircall.", details: meData }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Step 3: Get available phone numbers
     const phoneNumbersRes = await fetch("https://api.aircall.io/v1/phone_numbers", {
       headers: { Authorization: authBasic },
     });
     const phoneNumbersData = await phoneNumbersRes.json().catch(() => ({}));
+    console.log("Phone numbers response:", phoneNumbersRes.status, JSON.stringify(phoneNumbersData).slice(0, 300));
 
     if (!phoneNumbersRes.ok) {
-      console.error("Aircall phone_numbers error:", phoneNumbersRes.status, phoneNumbersData);
       return new Response(
-        JSON.stringify({ error: "aircall_error", status: phoneNumbersRes.status, details: phoneNumbersData }),
+        JSON.stringify({ error: "aircall_numbers_error", status: phoneNumbersRes.status, details: phoneNumbersData }),
         { status: phoneNumbersRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -90,14 +126,14 @@ serve(async (req) => {
     const phoneNumbers = phoneNumbersData.phone_numbers ?? [];
     if (phoneNumbers.length === 0) {
       return new Response(
-        JSON.stringify({ error: "no_phone_number", message: "Aucun numéro Aircall disponible dans ce compte." }),
+        JSON.stringify({ error: "no_phone_number", message: "Aucun numéro Aircall disponible." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     const phoneNumberId = phoneNumbers[0].id;
 
-    // Step 2: Initiate outbound call — POST /v1/users/{api_id}/calls
-    const callRes = await fetch(`https://api.aircall.io/v1/users/${apiId}/calls`, {
+    // Step 4: Initiate the outbound call
+    const callRes = await fetch(`https://api.aircall.io/v1/users/${aircallUserId}/calls`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -110,11 +146,11 @@ serve(async (req) => {
     });
 
     const callData = await callRes.json().catch(() => ({}));
+    console.log("Call response:", callRes.status, JSON.stringify(callData));
 
     if (!callRes.ok) {
-      console.error("Aircall call error:", callRes.status, callData);
       return new Response(
-        JSON.stringify({ error: "aircall_error", status: callRes.status, details: callData }),
+        JSON.stringify({ error: "aircall_call_error", status: callRes.status, details: callData }),
         { status: callRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
