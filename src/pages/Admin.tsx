@@ -223,6 +223,29 @@ export default function AdminPage() {
     setDeletingAptId(null);
   };
 
+  // ── Create user ────────────────────────────────────
+  const saveUser = async () => {
+    setSavingUser(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.access_token}`,
+      },
+      body: JSON.stringify(userForm),
+    });
+    const result = await resp.json();
+    if (!resp.ok) {
+      toast.error(result.error ?? "Erreur lors de la création");
+    } else {
+      toast.success(`Compte créé pour ${userForm.email}`);
+      setUserDialog(false);
+      setUserForm(EMPTY_USER_FORM);
+    }
+    setSavingUser(false);
+  };
+
   // ── Filters ────────────────────────────────────────
   const filteredLeads = leads.filter((l) => {
     const q = leadSearch.toLowerCase();
