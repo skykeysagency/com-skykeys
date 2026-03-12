@@ -39,8 +39,32 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
   const [showAppt, setShowAppt] = useState(false);
   const [callLogged, setCallLogged] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [remoteHungUp, setRemoteHungUp] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const playHangupSound = () => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const playBeep = (freq: number, start: number, duration: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = "sine";
+        gain.gain.setValueAtTime(0.3, ctx.currentTime + start);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + start + duration);
+      };
+      playBeep(480, 0, 0.2);
+      playBeep(380, 0.25, 0.2);
+      playBeep(280, 0.5, 0.3);
+    } catch {
+      // Audio not supported, silently skip
+    }
+  };
 
   const lead = leads[index];
   const isFirst = index === 0;
