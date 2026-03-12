@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import NewLeadDialog from "@/components/leads/NewLeadDialog";
+import ImportCSVDialog from "@/components/leads/ImportCSVDialog";
 
 type SortDir = "asc" | "desc";
 
@@ -30,6 +31,7 @@ export default function Leads() {
   const [sortField, setSortField] = useState("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [showNewLead, setShowNewLead] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   useEffect(() => {
     fetchLeads();
@@ -81,11 +83,9 @@ export default function Leads() {
           <p className="text-muted-foreground mt-0.5">{filtered.length} lead{filtered.length !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/leads/import">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Upload className="w-4 h-4" /> Import CSV
-            </Button>
-          </Link>
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowImport(true)}>
+            <Upload className="w-4 h-4" /> Import CSV
+          </Button>
           <Button size="sm" className="gap-2" onClick={() => setShowNewLead(true)}>
             <Plus className="w-4 h-4" /> Nouveau lead
           </Button>
@@ -139,6 +139,7 @@ export default function Leads() {
       )}
 
       <NewLeadDialog open={showNewLead} onClose={() => setShowNewLead(false)} onCreated={fetchLeads} />
+      <ImportCSVDialog open={showImport} onClose={() => setShowImport(false)} onImported={fetchLeads} />
     </div>
   );
 }

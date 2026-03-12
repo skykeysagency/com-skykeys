@@ -10,7 +10,6 @@ import ResetPassword from "@/pages/ResetPassword";
 import Dashboard from "@/pages/Dashboard";
 import Leads from "@/pages/Leads";
 import LeadDetail from "@/pages/LeadDetail";
-import ImportCSV from "@/pages/ImportCSV";
 import CalendarPage from "@/pages/CalendarPage";
 import Settings from "@/pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -29,7 +28,6 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
             <Route path="/leads" element={<AppLayout><Leads /></AppLayout>} />
-            <Route path="/leads/import" element={<AppLayout><ImportCSV /></AppLayout>} />
             <Route path="/leads/:id" element={<AppLayout><LeadDetail /></AppLayout>} />
             <Route path="/calendar" element={<AppLayout><CalendarPage /></AppLayout>} />
             <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
