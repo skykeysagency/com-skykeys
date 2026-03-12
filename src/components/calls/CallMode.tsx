@@ -40,6 +40,7 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
   const [callLogged, setCallLogged] = useState(false);
   const [muted, setMuted] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const lead = leads[index];
   const isFirst = index === 0;
@@ -75,6 +76,37 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
       if (timerRef.current) clearInterval(timerRef.current);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [callStatus]);
+
+  // Poll Aircall every 3s while in_call to detect remote hangup
+  useEffect(() => {
+    if (callStatus !== "in_call") {
+      if (pollRef.current) clearInterval(pollRef.current);
+      return;
+    }
+    // Wait 5s before first check (call needs time to connect)
+    const startPolling = () => {
+      pollRef.current = setInterval(async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const res = await supabase.functions.invoke("aircall-dial", {
+            body: { action: "check_call_status" },
+            headers: { Authorization: `Bearer ${session?.access_token}` },
+          });
+          if (res.data?.call_active === false) {
+            // Remote party hung up
+            setCallStatus("ended");
+          }
+        } catch {
+          // Silently ignore polling errors
+        }
+      }, 3000);
+    };
+    const delay = setTimeout(startPolling, 5000);
+    return () => {
+      clearTimeout(delay);
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
   }, [callStatus]);
 
   const formatDuration = (s: number) =>
