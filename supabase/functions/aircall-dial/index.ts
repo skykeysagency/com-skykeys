@@ -102,24 +102,14 @@ serve(async (req) => {
       );
     }
 
+    // Only dial actions need a phone number
     if (!phone_number) {
       return new Response(JSON.stringify({ error: "Missing phone_number" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Format: "api_id:api_token"
-    const aircallKey = profile.aircall_api_key as string;
-    const parts = aircallKey.split(":");
-    if (parts.length !== 2) {
-      return new Response(
-        JSON.stringify({ error: "invalid_key_format", message: "Format attendu : api_id:api_token" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    const [apiId, apiToken] = parts;
-    const encoded = btoa(`${apiId}:${apiToken}`);
-    const authBasic = `Basic ${encoded}`;
+    // authBasic is already set above — proceed to dial
 
     // Step 1: List users → GET /v1/users
     // Returns users with their numbers[] array included
