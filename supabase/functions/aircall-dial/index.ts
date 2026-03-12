@@ -73,68 +73,62 @@ serve(async (req) => {
     const encoded = btoa(`${apiId}:${apiToken}`);
     const authBasic = `Basic ${encoded}`;
 
-    // Step 1: Ping to validate credentials
-    const pingRes = await fetch("https://api.aircall.io/v1/ping", {
-      headers: { Authorization: authBasic },
-    });
-    const pingData = await pingRes.json().catch(() => ({}));
-    console.log("Ping response:", pingRes.status, JSON.stringify(pingData));
-
-    if (!pingRes.ok) {
-      return new Response(
-        JSON.stringify({ error: "aircall_auth_error", status: pingRes.status, details: pingData }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Step 2: List users to get the first available Aircall user ID
+    // Step 1: List users → GET /v1/users
+    // Returns users with their numbers[] array included
     const usersRes = await fetch("https://api.aircall.io/v1/users", {
       headers: { Authorization: authBasic },
     });
     const usersData = await usersRes.json().catch(() => ({}));
-    console.log("Users response:", usersRes.status, JSON.stringify(usersData).slice(0, 300));
+    console.log("Users response:", usersRes.status, JSON.stringify(usersData).slice(0, 500));
 
     if (!usersRes.ok) {
       return new Response(
-        JSON.stringify({ error: "aircall_user_error", status: usersRes.status, details: usersData }),
+        JSON.stringify({ error: "aircall_users_error", status: usersRes.status, details: usersData }),
         { status: usersRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const users = usersData?.users ?? [];
+    const users: any[] = usersData?.users ?? [];
     if (users.length === 0) {
       return new Response(
-        JSON.stringify({ error: "no_aircall_user", message: "Aucun utilisateur Aircall trouvé dans ce compte." }),
+        JSON.stringify({ error: "no_aircall_user", message: "Aucun utilisateur Aircall trouvé." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    // Use the first available user (or match by api_id if possible)
-    const aircallUserId = users[0].id;
 
-    // Step 3: Get available phone numbers
-    const phoneNumbersRes = await fetch("https://api.aircall.io/v1/phone_numbers", {
+    // Use first available user (available = true preferred, fallback to first)
+    const availableUser = users.find((u: any) => u.available) ?? users[0];
+    const aircallUserId: number = availableUser.id;
+
+    // Step 2: Get user details to retrieve their number_id
+    // GET /v1/users/:id — returns the user with their numbers[]
+    const userDetailRes = await fetch(`https://api.aircall.io/v1/users/${aircallUserId}`, {
       headers: { Authorization: authBasic },
     });
-    const phoneNumbersData = await phoneNumbersRes.json().catch(() => ({}));
-    console.log("Phone numbers response:", phoneNumbersRes.status, JSON.stringify(phoneNumbersData).slice(0, 300));
+    const userDetailData = await userDetailRes.json().catch(() => ({}));
+    console.log("User detail:", userDetailRes.status, JSON.stringify(userDetailData).slice(0, 500));
 
-    if (!phoneNumbersRes.ok) {
+    if (!userDetailRes.ok) {
       return new Response(
-        JSON.stringify({ error: "aircall_numbers_error", status: phoneNumbersRes.status, details: phoneNumbersData }),
-        { status: phoneNumbersRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "aircall_user_detail_error", status: userDetailRes.status, details: userDetailData }),
+        { status: userDetailRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const phoneNumbers = phoneNumbersData.phone_numbers ?? [];
-    if (phoneNumbers.length === 0) {
+    const userNumbers: any[] = userDetailData?.user?.numbers ?? [];
+    if (userNumbers.length === 0) {
       return new Response(
-        JSON.stringify({ error: "no_phone_number", message: "Aucun numéro Aircall disponible." }),
+        JSON.stringify({ error: "no_number_assigned", message: "L'utilisateur Aircall n'a aucun numéro assigné." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    const phoneNumberId = phoneNumbers[0].id;
 
-    // Step 4: Initiate the outbound call
+    // Use default_number_id if available, otherwise first number
+    const defaultNumberId: number = userDetailData?.user?.default_number_id ?? userNumbers[0].id;
+
+    // Step 3: Initiate outbound call — POST /v1/users/:id/calls
+    // Body: { "number_id": integer, "to": "+E164" }
+    // Returns 204 No Content on success
     const callRes = await fetch(`https://api.aircall.io/v1/users/${aircallUserId}/calls`, {
       method: "POST",
       headers: {
@@ -142,24 +136,26 @@ serve(async (req) => {
         Authorization: authBasic,
       },
       body: JSON.stringify({
+        number_id: defaultNumberId,
         to: phone_number,
-        phone_number_id: phoneNumberId,
       }),
     });
 
-    const callData = await callRes.json().catch(() => ({}));
-    console.log("Call response:", callRes.status, JSON.stringify(callData));
-
-    if (!callRes.ok) {
-      return new Response(
-        JSON.stringify({ error: "aircall_call_error", status: callRes.status, details: callData }),
-        { status: callRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // 204 = success (no body)
+    if (callRes.status === 204) {
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    return new Response(JSON.stringify({ success: true, call: callData }), {
-      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    const callData = await callRes.json().catch(() => ({}));
+    console.error("Call error:", callRes.status, callData);
+
+    return new Response(
+      JSON.stringify({ error: "aircall_call_error", status: callRes.status, details: callData }),
+      { status: callRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+
   } catch (err) {
     console.error("aircall-dial error:", err);
     return new Response(JSON.stringify({ error: String(err) }), {
