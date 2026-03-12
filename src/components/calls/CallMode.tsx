@@ -189,7 +189,19 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
     setCallDuration(0);
   };
 
-  const handleEndCall = () => {
+  const handleEndCall = async () => {
+    // Tell Aircall to actually hang up the call
+    if (aircallCallId) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        await supabase.functions.invoke("aircall-dial", {
+          body: { action: "hangup_call", call_id: aircallCallId },
+          headers: { Authorization: `Bearer ${session?.access_token}` },
+        });
+      } catch {
+        // Silently ignore — we still update local state
+      }
+    }
     setCallStatus("ended");
   };
 
