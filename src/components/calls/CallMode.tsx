@@ -79,7 +79,6 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
   }, [callStatus]);
 
   // Poll Aircall every 3s while in_call to detect remote hangup
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
     if (callStatus !== "in_call") {
       if (pollRef.current) clearInterval(pollRef.current);
