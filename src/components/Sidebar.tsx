@@ -1,10 +1,11 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Calendar, Settings, LogOut, Zap, ShieldCheck,
+  LayoutDashboard, Users, Calendar, Settings, LogOut, ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
 import { cn } from "@/lib/utils";
+import skyCallLogo from "@/assets/skycall-logo.png";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
@@ -41,13 +42,9 @@ export default function Sidebar() {
   return (
     <aside className="hidden md:flex flex-col w-[220px] shrink-0 min-h-screen gradient-sidebar text-sidebar-foreground border-r border-sidebar-border">
       {/* ── Logo ── */}
-      <div className="flex items-center gap-3 px-5 pt-6 pb-5">
-        <div className="w-8 h-8 rounded-xl gradient-primary flex items-center justify-center shadow-primary shrink-0">
-          <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
-        </div>
-        <div>
-          <span className="font-bold text-sm text-sidebar-accent-foreground tracking-tight">Sky Call</span>
-        </div>
+      <div className="flex items-center gap-2 px-5 pt-6 pb-5">
+        <img src={skyCallLogo} alt="Sky Call" className="w-8 h-8 object-contain shrink-0" />
+        <span className="font-bold text-sm text-sidebar-accent-foreground tracking-tight">Sky Call</span>
       </div>
 
       {/* ── Separator ── */}
