@@ -389,7 +389,7 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
               </div>
             )}
             {callStatus === "in_call" && (
-              <div className="flex flex-col items-center gap-2">
+              <div className="flex flex-col items-center gap-3">
                 <div className="flex items-center gap-2 text-green-600 font-medium text-sm">
                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   En communication
@@ -397,15 +397,27 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
                 <p className="text-2xl font-mono font-bold text-foreground tabular-nums">
                   {formatDuration(callDuration)}
                 </p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setMuted(!muted)}
-                  className={`gap-1.5 text-xs ${muted ? "text-destructive" : "text-muted-foreground"}`}
-                >
-                  {muted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-                  {muted ? "Micro coupé" : "Couper le micro"}
-                </Button>
+                <div className="flex items-center gap-2 mt-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMuted(!muted)}
+                    className={`gap-1.5 text-xs ${muted ? "text-destructive" : "text-muted-foreground"}`}
+                  >
+                    {muted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                    {muted ? "Micro coupé" : "Couper le micro"}
+                  </Button>
+                  <div className="w-px h-4 bg-border" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAppt(true)}
+                    className="gap-1.5 text-xs text-primary hover:text-primary"
+                  >
+                    <CalendarPlus className="w-3.5 h-3.5" />
+                    Planifier un RDV
+                  </Button>
+                </div>
               </div>
             )}
 
