@@ -10,7 +10,6 @@ import ResetPassword from "@/pages/ResetPassword";
 import Dashboard from "@/pages/Dashboard";
 import Leads from "@/pages/Leads";
 import LeadDetail from "@/pages/LeadDetail";
-import ImportCSV from "@/pages/ImportCSV";
 import CalendarPage from "@/pages/CalendarPage";
 import Settings from "@/pages/Settings";
 import NotFound from "./pages/NotFound";

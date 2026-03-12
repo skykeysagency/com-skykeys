@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Calendar, Settings, TrendingUp, LogOut, Upload, Phone
+  LayoutDashboard, Users, Calendar, Settings, TrendingUp, LogOut, Phone
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
   { to: "/leads", icon: Users, label: "Leads" },
-  { to: "/leads/import", icon: Upload, label: "Import CSV" },
   { to: "/calendar", icon: Calendar, label: "Calendrier" },
   { to: "/settings", icon: Settings, label: "Paramètres" },
 ];
