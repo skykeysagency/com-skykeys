@@ -359,8 +359,8 @@ export default function CalendarPage() {
                   return (
                     <div
                       key={apt.id}
-                      onClick={(e) => e.stopPropagation()}
-                      className={`text-[11px] rounded-md px-1.5 py-0.5 truncate border-l-2 leading-tight font-semibold transition-colors ${color.bg} ${color.text} ${color.hover}`}
+                      onClick={(e) => { e.stopPropagation(); openAptDetail(apt.id); }}
+                      className={`text-[11px] rounded-md px-1.5 py-0.5 truncate border-l-2 leading-tight font-semibold transition-colors cursor-pointer ${color.bg} ${color.text} ${color.hover}`}
                     >
                       <span className="opacity-70">{format(parseISO(apt.start_at), "HH:mm")}</span>{" "}
                       {apt.title}
