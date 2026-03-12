@@ -87,27 +87,29 @@ serve(async (req) => {
       );
     }
 
-    // Step 2: Get the Aircall user (me) to get real user_id
-    const meRes = await fetch("https://api.aircall.io/v1/users/me", {
+    // Step 2: List users to get the first available Aircall user ID
+    const usersRes = await fetch("https://api.aircall.io/v1/users", {
       headers: { Authorization: authBasic },
     });
-    const meData = await meRes.json().catch(() => ({}));
-    console.log("Users/me response:", meRes.status, JSON.stringify(meData));
+    const usersData = await usersRes.json().catch(() => ({}));
+    console.log("Users response:", usersRes.status, JSON.stringify(usersData).slice(0, 300));
 
-    if (!meRes.ok) {
+    if (!usersRes.ok) {
       return new Response(
-        JSON.stringify({ error: "aircall_user_error", status: meRes.status, details: meData }),
-        { status: meRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "aircall_user_error", status: usersRes.status, details: usersData }),
+        { status: usersRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const aircallUserId = meData?.user?.id;
-    if (!aircallUserId) {
+    const users = usersData?.users ?? [];
+    if (users.length === 0) {
       return new Response(
-        JSON.stringify({ error: "no_aircall_user_id", message: "Impossible de récupérer l'ID utilisateur Aircall.", details: meData }),
+        JSON.stringify({ error: "no_aircall_user", message: "Aucun utilisateur Aircall trouvé dans ce compte." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    // Use the first available user (or match by api_id if possible)
+    const aircallUserId = users[0].id;
 
     // Step 3: Get available phone numbers
     const phoneNumbersRes = await fetch("https://api.aircall.io/v1/phone_numbers", {
