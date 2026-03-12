@@ -33,6 +33,7 @@ export default function Leads() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [showNewLead, setShowNewLead] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [callModeLeads, setCallModeLeads] = useState<any[] | null>(null);
 
   useEffect(() => {
     fetchLeads();
