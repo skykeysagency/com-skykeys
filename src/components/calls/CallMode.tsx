@@ -118,6 +118,9 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
             body: { action: "check_call_status" },
             headers: { Authorization: `Bearer ${session?.access_token}` },
           });
+          if (res.data?.latest_call?.id && !aircallCallId) {
+            setAircallCallId(res.data.latest_call.id);
+          }
           if (res.data?.call_active === false) {
             // Remote party hung up
             setRemoteHungUp(true);
