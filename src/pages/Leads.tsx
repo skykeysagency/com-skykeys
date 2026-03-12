@@ -88,6 +88,21 @@ export default function Leads() {
           <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowImport(true)}>
             <Upload className="w-4 h-4" /> Import CSV
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-green-500/50 text-green-700 hover:bg-green-50 hover:text-green-800"
+            onClick={() => {
+              const leadsWithPhone = filtered.filter((l) => l.phone);
+              if (leadsWithPhone.length === 0) {
+                import("sonner").then(({ toast }) => toast.error("Aucun lead avec un numéro de téléphone dans la sélection actuelle."));
+                return;
+              }
+              setCallModeLeads(leadsWithPhone);
+            }}
+          >
+            <PhoneCall className="w-4 h-4" /> Mode appel ({filtered.filter(l => l.phone).length})
+          </Button>
           <Button size="sm" className="gap-2" onClick={() => setShowNewLead(true)}>
             <Plus className="w-4 h-4" /> Nouveau lead
           </Button>
