@@ -23,6 +23,7 @@ export default function LeadDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isAdmin } = useRole();
   const [lead, setLead] = useState<any>(null);
   const [activities, setActivities] = useState<any[]>([]);
   const [calls, setCalls] = useState<any[]>([]);
