@@ -13,7 +13,7 @@ import { useRole } from "@/hooks/useRole";
 import {
   ArrowLeft, Phone, Mail, Globe, Building, User, Loader2,
   PhoneCall, MessageSquare, Calendar, Clock, Send, Edit3, Check, X,
-  MapPin, Tag
+  MapPin, Tag, UserCheck,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
