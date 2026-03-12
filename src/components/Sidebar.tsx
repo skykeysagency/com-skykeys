@@ -1,10 +1,11 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Calendar, Settings, LogOut, Zap, ShieldCheck,
+  LayoutDashboard, Users, Calendar, Settings, LogOut, ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
 import { cn } from "@/lib/utils";
+import skyCallLogo from "@/assets/skycall-logo.png";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
