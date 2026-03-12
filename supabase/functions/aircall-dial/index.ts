@@ -96,8 +96,14 @@ serve(async (req) => {
       );
     }
 
-    // Use first available user (available = true preferred, fallback to first)
-    const availableUser = users.find((u: any) => u.available) ?? users[0];
+    // Use first user where available = true — do NOT fallback to unavailable users
+    const availableUser = users.find((u: any) => u.available === true);
+    if (!availableUser) {
+      return new Response(
+        JSON.stringify({ error: "user_unavailable", message: "Aucun utilisateur Aircall n'est disponible. Ouvrez l'application Aircall Phone et passez en statut « Disponible »." }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     const aircallUserId: number = availableUser.id;
 
     // Step 2: Get user details to retrieve their number_id
