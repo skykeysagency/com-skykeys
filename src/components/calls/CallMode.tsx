@@ -101,9 +101,9 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
       if (data?.error === "no_aircall_key") {
         toast.error("Configurez votre clé Aircall dans les Paramètres pour le click-to-call.", { duration: 6000 });
         window.open(`tel:${lead.phone}`);
-      } else if (httpStatus === 405 || data?.details?.troubleshoot?.toLowerCase().includes("unavailable")) {
+      } else if (data?.error === "user_unavailable" || httpStatus === 405 || data?.details?.troubleshoot?.toLowerCase().includes("unavailable")) {
         toast.warning(
-          "Votre téléphone Aircall n'est pas disponible. Ouvrez l'application Aircall Phone et passez en statut « Disponible », puis réessayez.",
+          "⚠️ Votre application Aircall Phone est fermée ou en statut « Indisponible ». Ouvrez-la et passez en « Disponible », puis réessayez.",
           { duration: 8000 }
         );
         setCallStatus("idle");
