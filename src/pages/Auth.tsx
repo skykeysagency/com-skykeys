@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { TrendingUp, Mail, Lock, ArrowRight, Loader2, BarChart3, Users, Calendar, Phone } from "lucide-react";
+import { Mail, Lock, ArrowRight, Loader2, BarChart3, Users, Calendar, Phone } from "lucide-react";
+import skyCallLogo from "@/assets/skycall-logo.png";
 
 type Mode = "login" | "forgot";
 
