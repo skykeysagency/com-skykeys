@@ -525,6 +525,33 @@ export default function AdminPage() {
               </div>
             )}
           </TabsContent>
+
+          {/* ── USERS TAB ── */}
+          <TabsContent value="users">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Comptes utilisateurs</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">L'inscription publique est désactivée — seul l'admin peut créer des comptes.</p>
+              </div>
+              <Button size="sm" className="gap-1.5 shadow-primary text-xs font-semibold" onClick={() => setUserDialog(true)}>
+                <UserPlus className="w-3.5 h-3.5" /> Créer un compte
+              </Button>
+            </div>
+
+            <div className="rounded-xl border border-dashed border-border bg-muted/20 p-10 flex flex-col items-center justify-center gap-3 text-center">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <UserPlus className="w-6 h-6 text-primary" />
+              </div>
+              <p className="text-sm font-semibold text-foreground">Accès sur invitation uniquement</p>
+              <p className="text-xs text-muted-foreground max-w-xs">
+                Cliquez sur "Créer un compte" pour inviter un commercial ou un manager. Ils pourront se connecter immédiatement avec les identifiants fournis.
+              </p>
+              <Button size="sm" variant="outline" className="mt-2 gap-1.5 text-xs" onClick={() => setUserDialog(true)}>
+                <UserPlus className="w-3.5 h-3.5" /> Créer un premier compte
+              </Button>
+            </div>
+          </TabsContent>
+
         </Tabs>
       </div>
 
