@@ -91,7 +91,7 @@ export default function Leads() {
           <Button
             variant="outline"
             size="sm"
-            className="gap-2 border-green-500/50 text-green-700 hover:bg-green-50 hover:text-green-800"
+            className="gap-2 text-green-700 border-green-500/40 hover:bg-green-50"
             onClick={() => {
               const leadsWithPhone = filtered.filter((l) => l.phone);
               if (leadsWithPhone.length === 0) {
