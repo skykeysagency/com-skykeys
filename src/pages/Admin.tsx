@@ -95,6 +95,12 @@ export default function AdminPage() {
   const [savingApt, setSavingApt] = useState(false);
   const [deletingAptId, setDeletingAptId] = useState<string | null>(null);
 
+  // ── User creation state ────────────────────────────
+  const EMPTY_USER_FORM = { email: "", password: "", first_name: "", last_name: "", role: "commercial" as "admin" | "manager" | "commercial" };
+  const [userDialog, setUserDialog] = useState(false);
+  const [userForm, setUserForm] = useState(EMPTY_USER_FORM);
+  const [savingUser, setSavingUser] = useState(false);
+
   useEffect(() => {
     if (!loadingRole && !isManager) navigate("/", { replace: true });
   }, [loadingRole, isManager]);
