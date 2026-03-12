@@ -40,6 +40,7 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
   const [callLogged, setCallLogged] = useState(false);
   const [muted, setMuted] = useState(false);
   const [remoteHungUp, setRemoteHungUp] = useState(false);
+  const [aircallCallId, setAircallCallId] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
