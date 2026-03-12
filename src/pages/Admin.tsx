@@ -730,6 +730,62 @@ export default function AdminPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Create user dialog ── */}
+      <Dialog open={userDialog} onOpenChange={(o) => !o && setUserDialog(false)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shadow-primary">
+                <UserPlus className="w-4 h-4 text-primary-foreground" />
+              </div>
+              Créer un compte utilisateur
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Prénom">
+                <Input placeholder="Jean" value={userForm.first_name} onChange={(e) => setUserForm({ ...userForm, first_name: e.target.value })} />
+              </Field>
+              <Field label="Nom">
+                <Input placeholder="Dupont" value={userForm.last_name} onChange={(e) => setUserForm({ ...userForm, last_name: e.target.value })} />
+              </Field>
+            </div>
+            <Field label="Email *">
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input type="email" placeholder="jean@société.fr" className="pl-9" value={userForm.email} onChange={(e) => setUserForm({ ...userForm, email: e.target.value })} />
+              </div>
+            </Field>
+            <Field label="Mot de passe *">
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input type="password" placeholder="Min. 6 caractères" className="pl-9" minLength={6} value={userForm.password} onChange={(e) => setUserForm({ ...userForm, password: e.target.value })} />
+              </div>
+            </Field>
+            <Field label="Rôle">
+              <Select value={userForm.role} onValueChange={(v) => setUserForm({ ...userForm, role: v as "admin" | "manager" | "commercial" })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="commercial">Commercial</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="admin">Administrateur</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setUserDialog(false)}>Annuler</Button>
+            <Button
+              disabled={savingUser || !userForm.email || !userForm.password}
+              onClick={saveUser}
+              className="shadow-primary"
+            >
+              {savingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : "Créer le compte"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
