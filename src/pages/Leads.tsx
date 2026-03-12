@@ -83,11 +83,9 @@ export default function Leads() {
           <p className="text-muted-foreground mt-0.5">{filtered.length} lead{filtered.length !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/leads/import">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Upload className="w-4 h-4" /> Import CSV
-            </Button>
-          </Link>
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowImport(true)}>
+            <Upload className="w-4 h-4" /> Import CSV
+          </Button>
           <Button size="sm" className="gap-2" onClick={() => setShowNewLead(true)}>
             <Plus className="w-4 h-4" /> Nouveau lead
           </Button>
