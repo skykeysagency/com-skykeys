@@ -71,9 +71,9 @@ export default function Auth() {
 
         <div className="relative z-10 flex flex-col h-full p-12">
           {/* Logo */}
-          <div className="flex items-center gap-2">
-            <img src={skyCallLogo} alt="Sky Call" className="w-10 h-10 object-contain" />
-            <span className="text-xl font-bold text-white tracking-tight">Sky Call</span>
+          <div className="flex items-center gap-1">
+            <img src={skyCallLogo} alt="Sky Call" className="w-16 h-16 object-contain mix-blend-screen" />
+            <span className="text-xl font-bold text-white tracking-tight -ml-1">Sky Call</span>
           </div>
 
           {/* Hero text */}
