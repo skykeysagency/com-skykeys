@@ -89,6 +89,7 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
       setCallNote("");
       setOutcome("");
       setCallLogged(false);
+      setAircallCallId(null);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [index, lead?.id]);
