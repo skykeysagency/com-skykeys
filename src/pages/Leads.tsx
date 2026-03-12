@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import NewLeadDialog from "@/components/leads/NewLeadDialog";
+import ImportCSVDialog from "@/components/leads/ImportCSVDialog";
 
 type SortDir = "asc" | "desc";
 
@@ -30,6 +31,7 @@ export default function Leads() {
   const [sortField, setSortField] = useState("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [showNewLead, setShowNewLead] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   useEffect(() => {
     fetchLeads();
