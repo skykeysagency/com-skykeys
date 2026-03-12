@@ -306,6 +306,9 @@ export default function AdminPage() {
               <CalendarDays className="w-4 h-4" /> Rendez-vous
               <span className="ml-1 text-[11px] font-bold text-muted-foreground">({appointments.length})</span>
             </TabsTrigger>
+            <TabsTrigger value="users" className="gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <UserPlus className="w-4 h-4" /> Utilisateurs
+            </TabsTrigger>
           </TabsList>
 
           {/* ── LEADS TAB ── */}
