@@ -46,7 +46,7 @@ export default function Sidebar() {
           <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
         </div>
         <div>
-          <span className="font-bold text-sm text-sidebar-accent-foreground tracking-tight">CommercialCRM</span>
+          <span className="font-bold text-sm text-sidebar-accent-foreground tracking-tight">Sky Call</span>
         </div>
       </div>
 

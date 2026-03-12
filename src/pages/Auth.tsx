@@ -134,7 +134,7 @@ export default function Auth() {
               style={{ background: "var(--gradient-primary)" }}>
               <TrendingUp className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-lg text-foreground">CommercialCRM</span>
+            <span className="font-bold text-lg text-foreground">Sky Call</span>
           </div>
 
           {mode === "login" && (
