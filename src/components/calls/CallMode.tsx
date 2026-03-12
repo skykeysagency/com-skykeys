@@ -94,7 +94,7 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
       });
 
       const data = res.data;
-      const httpStatus = data?.status;
+      const httpStatus = data?.aircall_status;
 
       if (res.error) throw res.error;
 
@@ -102,7 +102,6 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
         toast.error("Configurez votre clé Aircall dans les Paramètres pour le click-to-call.", { duration: 6000 });
         window.open(`tel:${lead.phone}`);
       } else if (httpStatus === 405 || data?.details?.troubleshoot?.toLowerCase().includes("unavailable")) {
-        // 405 = user not available in Aircall Phone app
         toast.warning(
           "Votre téléphone Aircall n'est pas disponible. Ouvrez l'application Aircall Phone et passez en statut « Disponible », puis réessayez.",
           { duration: 8000 }
