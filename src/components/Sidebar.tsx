@@ -1,8 +1,9 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Calendar, Settings, LogOut, Zap
+  LayoutDashboard, Users, Calendar, Settings, LogOut, Zap, ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useRole } from "@/hooks/useRole";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -14,6 +15,7 @@ const navItems = [
 
 export default function Sidebar() {
   const { user, signOut } = useAuth();
+  const { isManager } = useRole();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -87,6 +89,43 @@ export default function Sidebar() {
             </NavLink>
           );
         })}
+
+        {/* ── Admin entry (manager/admin only) ── */}
+        {isManager && (
+          <>
+            <div className="mx-0 my-2 h-px bg-sidebar-border/50" />
+            <p className="px-3 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40 mb-1">
+              Administration
+            </p>
+            {(() => {
+              const isActive = location.pathname.startsWith("/admin");
+              return (
+                <NavLink
+                  to="/admin"
+                  className={cn(
+                    "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
+                    isActive
+                      ? "bg-sidebar-primary/15 text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  )}
+                >
+                  <div className={cn(
+                    "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all",
+                    isActive
+                      ? "gradient-primary shadow-primary"
+                      : "bg-sidebar-accent/50 group-hover:bg-sidebar-accent"
+                  )}>
+                    <ShieldCheck className={cn("w-3.5 h-3.5", isActive ? "text-white" : "text-sidebar-foreground group-hover:text-sidebar-accent-foreground")} strokeWidth={2} />
+                  </div>
+                  <span>Administrateurs</span>
+                  {isActive && (
+                    <div className="ml-auto w-1 h-4 rounded-full bg-sidebar-primary/80" />
+                  )}
+                </NavLink>
+              );
+            })()}
+          </>
+        )}
       </nav>
 
       {/* ── User footer ── */}
