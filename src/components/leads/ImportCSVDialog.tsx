@@ -108,7 +108,7 @@ export default function ImportCSVDialog({ open, onClose, onImported }: Props) {
         }
       });
       return obj;
-    }).filter((r) => r.first_name || r.last_name);
+    }).filter((r) => r.phone);
 
   const handleImport = async () => {
     if (!user) return;
