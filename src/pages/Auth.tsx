@@ -128,10 +128,7 @@ export default function Auth() {
         <div className="w-full max-w-[380px] relative z-10">
           {/* Mobile logo */}
           <div className="flex items-center gap-2 mb-10 lg:hidden">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: "var(--gradient-primary)" }}>
-              <TrendingUp className="w-4 h-4 text-white" />
-            </div>
+            <img src={skyCallLogo} alt="Sky Call" className="w-9 h-9 object-contain" />
             <span className="font-bold text-lg text-foreground">Sky Call</span>
           </div>
 
