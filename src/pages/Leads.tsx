@@ -10,13 +10,14 @@ import {
 } from "@/components/ui/table";
 import {
   Plus, Search, Upload, LayoutGrid, List, Phone, Mail,
-  ChevronUp, ChevronDown, Globe, Loader2
+  ChevronUp, ChevronDown, Globe, Loader2, PhoneCall
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import NewLeadDialog from "@/components/leads/NewLeadDialog";
 import ImportCSVDialog from "@/components/leads/ImportCSVDialog";
+import CallMode from "@/components/calls/CallMode";
 
 type SortDir = "asc" | "desc";
 
