@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge, LEAD_STATUSES } from "@/lib/leadStatus";
 import { toast } from "sonner";
+import { useRole } from "@/hooks/useRole";
 import {
   ArrowLeft, Phone, Mail, Globe, Building, User, Loader2,
   PhoneCall, MessageSquare, Calendar, Clock, Send, Edit3, Check, X,
