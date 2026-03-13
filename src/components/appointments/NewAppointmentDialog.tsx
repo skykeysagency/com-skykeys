@@ -202,14 +202,14 @@ function NewAppointmentDialog({
     setLoading(false);
   };
 
-  const handleClose = useCallback(() => {
-    onClose();
+  const handleOpenChange = useCallback((isOpen: boolean) => {
+    if (!isOpen) onClose();
   }, [onClose]);
 
   const isLocked = !!defaultLeadId;
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Nouveau rendez-vous</DialogTitle>
@@ -237,7 +237,7 @@ function NewAppointmentDialog({
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
             <div>
-              <Button onClick={handleClose} className="w-full">Fermer</Button>
+              <Button onClick={onClose} className="w-full">Fermer</Button>
             </div>
           </div>
         ) : (
@@ -430,7 +430,7 @@ function NewAppointmentDialog({
             </div>
 
             <div className="flex gap-2 justify-end pt-1">
-              <Button type="button" variant="outline" onClick={handleClose}>
+              <Button type="button" variant="outline" onClick={onClose}>
                 Annuler
               </Button>
               <Button type="submit" disabled={loading} className="gap-2">
