@@ -374,6 +374,7 @@ function TodaySummary({ viewMode, currentDate, appointments, onAptClick }: Today
 // ── Main page ──────────────────────────────────────────────────────
 
 export default function CalendarPage() {
+  const { user } = useAuth();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("week");
