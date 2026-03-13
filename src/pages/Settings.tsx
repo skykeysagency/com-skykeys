@@ -1,21 +1,26 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, User, Phone, Key, Check, Shield, Mail, Briefcase, ExternalLink } from "lucide-react";
+import { Loader2, User, Phone, Key, Check, Shield, Mail, Briefcase, ExternalLink, Video, CheckCircle2, Link2 } from "lucide-react";
 
 export default function Settings() {
   const { user } = useAuth();
+  const { isAdmin } = useRole();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ first_name: "", last_name: "", position: "", aircall_api_key: "" });
   const [showKey, setShowKey] = useState(false);
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [checkingGoogle, setCheckingGoogle] = useState(false);
 
   useEffect(() => { fetchProfile(); }, [user]);
+  useEffect(() => { if (isAdmin) checkGoogleConnection(); }, [isAdmin]);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -31,6 +36,40 @@ export default function Settings() {
       });
     }
     setLoading(false);
+  };
+
+  const checkGoogleConnection = async () => {
+    setCheckingGoogle(true);
+    const { data } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "google_refresh_token")
+      .single();
+    setGoogleConnected(!!data?.value);
+    setCheckingGoogle(false);
+  };
+
+  const connectGoogle = () => {
+    const clientId = "487021133980-t6s24vsvukf8rl86sfg7v1rtlsnpn56i.apps.googleusercontent.com";
+    const redirectUri = `${window.location.origin}/google-auth-callback`;
+    const scope = [
+      "https://www.googleapis.com/auth/calendar",
+      "https://www.googleapis.com/auth/calendar.events",
+    ].join(" ");
+    const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    url.searchParams.set("client_id", clientId);
+    url.searchParams.set("redirect_uri", redirectUri);
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("scope", scope);
+    url.searchParams.set("access_type", "offline");
+    url.searchParams.set("prompt", "consent");
+    window.location.href = url.toString();
+  };
+
+  const disconnectGoogle = async () => {
+    await supabase.from("app_settings").delete().eq("key", "google_refresh_token");
+    setGoogleConnected(false);
+    toast.success("Google Calendar déconnecté");
   };
 
   const handleSave = async () => {
@@ -171,6 +210,66 @@ export default function Settings() {
           )}
         </CardContent>
       </Card>
+
+      {/* ── Google Calendar card (admin only) ── */}
+      {isAdmin && (
+        <Card className="border-border shadow-card">
+          <CardHeader className="pb-4 border-b border-border">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Video className="w-4 h-4 text-primary" /> Intégration Google Calendar & Meet
+            </CardTitle>
+            <CardDescription>
+              Connectez votre compte Google pour créer des liens Google Meet automatiquement lors de la création de RDV.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-5 space-y-4">
+            {checkingGoogle ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" /> Vérification de la connexion…
+              </div>
+            ) : googleConnected ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-emerald-800">Google Calendar connecté</p>
+                    <p className="text-xs text-emerald-600 mt-0.5">Les RDV créés peuvent générer un lien Google Meet et envoyer les invitations.</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 text-xs text-destructive border-destructive/30 hover:bg-destructive/5"
+                  onClick={disconnectGoogle}
+                >
+                  <Link2 className="w-3.5 h-3.5" />
+                  Déconnecter Google Calendar
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="rounded-xl bg-accent border border-accent-foreground/10 p-4 space-y-2">
+                  <p className="text-xs font-semibold text-accent-foreground flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5" /> Connexion requise
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Cliquez sur le bouton ci-dessous pour autoriser Sky Call à créer des événements dans votre Google Calendar et générer des liens Meet.
+                  </p>
+                </div>
+                <Button
+                  onClick={connectGoogle}
+                  className="gap-2 shadow-primary"
+                  size="sm"
+                >
+                  <Video className="w-4 h-4" />
+                  Connecter Google Calendar
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── Save button ── */}
       <div className="flex justify-end pt-1">

@@ -52,13 +52,33 @@ export type Database = {
           },
         ]
       }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           created_at: string
           end_at: string
+          google_event_id: string | null
           id: string
           lead_id: string | null
           location: string | null
+          meeting_link: string | null
           notes: string | null
           start_at: string
           title: string
@@ -68,9 +88,11 @@ export type Database = {
         Insert: {
           created_at?: string
           end_at: string
+          google_event_id?: string | null
           id?: string
           lead_id?: string | null
           location?: string | null
+          meeting_link?: string | null
           notes?: string | null
           start_at: string
           title: string
@@ -80,9 +102,11 @@ export type Database = {
         Update: {
           created_at?: string
           end_at?: string
+          google_event_id?: string | null
           id?: string
           lead_id?: string | null
           location?: string | null
+          meeting_link?: string | null
           notes?: string | null
           start_at?: string
           title?: string

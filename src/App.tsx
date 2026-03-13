@@ -11,6 +11,7 @@ import Dashboard from "@/pages/Dashboard";
 import Leads from "@/pages/Leads";
 import LeadDetail from "@/pages/LeadDetail";
 import CalendarPage from "@/pages/CalendarPage";
+import GoogleCalendarCallback from "@/pages/GoogleCalendarCallback";
 import Settings from "@/pages/Settings";
 import Admin from "@/pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/leads" element={<AppLayout><Leads /></AppLayout>} />
             <Route path="/leads/:id" element={<AppLayout><LeadDetail /></AppLayout>} />
             <Route path="/calendar" element={<AppLayout><CalendarPage /></AppLayout>} />
+            <Route path="/google-auth-callback" element={<GoogleCalendarCallback />} />
             <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
             <Route path="/admin" element={<AppLayout><Admin /></AppLayout>} />
             <Route path="*" element={<NotFound />} />
