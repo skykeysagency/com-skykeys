@@ -447,7 +447,6 @@ function NewAppointmentDialog({
   );
 }
 
-export { NewAppointmentDialog };
 export default memo(NewAppointmentDialog);
 
 function Label({ children }: { children: React.ReactNode }) {
