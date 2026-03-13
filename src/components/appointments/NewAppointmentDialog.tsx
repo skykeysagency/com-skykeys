@@ -218,8 +218,8 @@ export default function NewAppointmentDialog({
         {meetLink ? (
           // ── Meet link success screen ──
           <div className="space-y-4 mt-2 text-center py-4">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto">
-              <Video className="w-8 h-8 text-emerald-600" />
+            <div className="w-16 h-16 rounded-2xl bg-accent border border-border flex items-center justify-center mx-auto">
+              <Video className="w-8 h-8 text-primary" />
             </div>
             <div>
               <p className="font-bold text-foreground text-lg">Rendez-vous créé !</p>
@@ -229,9 +229,9 @@ export default function NewAppointmentDialog({
               href={meetLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold text-sm hover:bg-emerald-100 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-accent border border-border text-foreground font-semibold text-sm hover:bg-accent/80 transition-colors"
             >
-              <Video className="w-4 h-4" />
+              <Video className="w-4 h-4 text-primary" />
               Rejoindre Google Meet
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
