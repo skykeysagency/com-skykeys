@@ -113,7 +113,7 @@ export default function AppointmentDetailSheet({ appointmentId, open, onClose, o
   };
 
   return (
-    <Sheet open={open} onOpenChange={onClose}>
+    <Sheet open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
       <SheetContent className="w-full sm:max-w-md overflow-y-auto p-0">
         {loading ? (
           <div className="flex items-center justify-center h-full">
