@@ -159,6 +159,23 @@ export default function AppointmentDetailSheet({ appointmentId, open, onClose, o
               <div className="space-y-3">
                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Rendez-vous</h3>
                 <div className="space-y-3">
+                  {apt.meeting_link && (
+                    <a
+                      href={apt.meeting_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                        <Video className="w-4 h-4 text-emerald-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-0.5">Lien Google Meet</p>
+                        <p className="text-sm font-semibold text-emerald-800 truncate group-hover:underline">Rejoindre la réunion</p>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-emerald-600 shrink-0" />
+                    </a>
+                  )}
                   {apt.location && (
                     <InfoRow icon={MapPin} label="Lieu / Lien" value={apt.location}
                       href={apt.location.startsWith("http") ? apt.location : undefined}
