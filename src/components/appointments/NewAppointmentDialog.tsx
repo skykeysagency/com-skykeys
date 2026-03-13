@@ -201,9 +201,9 @@ export default function NewAppointmentDialog({
     setLoading(false);
   };
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     onClose();
-  };
+  }, [onClose]);
 
   const isLocked = !!defaultLeadId;
 
