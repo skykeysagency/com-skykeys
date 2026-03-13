@@ -400,14 +400,13 @@ function NewAppointmentDialog({
               />
             </div>
 
-            {/* Google Meet option */}
+            {/* Google Meet option — seul le Checkbox met à jour createMeet (évite double setState / boucle) */}
             <div
-              className={`flex items-start gap-3 p-3 rounded-xl border transition-colors cursor-pointer ${
+              className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${
                 createMeet
                   ? "bg-emerald-50 border-emerald-200"
                   : "bg-muted/40 border-border hover:border-emerald-200"
               }`}
-              onClick={() => setCreateMeet(!createMeet)}
             >
               <Checkbox
                 id="create-meet"
@@ -415,7 +414,7 @@ function NewAppointmentDialog({
                 onCheckedChange={(v) => setCreateMeet(!!v)}
                 className="mt-0.5"
               />
-              <div className="flex-1">
+              <div className="flex-1 cursor-pointer">
                 <label
                   htmlFor="create-meet"
                   className="flex items-center gap-2 text-sm font-semibold text-foreground cursor-pointer"
