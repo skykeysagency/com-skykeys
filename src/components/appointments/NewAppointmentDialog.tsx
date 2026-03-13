@@ -419,7 +419,7 @@ export default function NewAppointmentDialog({
                   htmlFor="create-meet"
                   className="flex items-center gap-2 text-sm font-semibold text-foreground cursor-pointer"
                 >
-                  <Video className="w-4 h-4 text-emerald-600" />
+                  <Video className="w-4 h-4 text-primary" />
                   Créer un lien Google Meet
                 </label>
                 <p className="text-xs text-muted-foreground mt-0.5">
