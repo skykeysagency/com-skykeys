@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   CalendarDays, Clock, MapPin, User, Building2, Phone, Mail,
-  Briefcase, FileText, Globe, ExternalLink, Pencil, Trash2, Loader2,
+  Briefcase, FileText, Globe, ExternalLink, Pencil, Trash2, Loader2, Video,
 } from "lucide-react";
 import { format, parseISO, differenceInMinutes } from "date-fns";
 import { fr } from "date-fns/locale";
