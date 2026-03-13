@@ -40,7 +40,7 @@ export default function GoogleCalendarCallback() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session?.access_token}`,
           },
-          body: JSON.stringify({ code, redirect_uri: `${window.location.origin}/calendar` }),
+          body: JSON.stringify({ code, redirect_uri: `${window.location.origin}/google-auth-callback` }),
         }
       );
 
