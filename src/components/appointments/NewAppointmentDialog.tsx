@@ -430,7 +430,7 @@ function NewAppointmentDialog({
             </div>
 
             <div className="flex gap-2 justify-end pt-1">
-              <Button type="button" variant="outline" onClick={handleClose}>
+              <Button type="button" variant="outline" onClick={onClose}>
                 Annuler
               </Button>
               <Button type="submit" disabled={loading} className="gap-2">
