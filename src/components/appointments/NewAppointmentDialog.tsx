@@ -24,7 +24,7 @@ const EMPTY_PROSPECT = {
   first_name: "", last_name: "", email: "", phone: "", company: "", position: "",
 };
 
-export default function NewAppointmentDialog({
+function NewAppointmentDialog({
   open, onClose, onCreated, defaultLeadId, defaultLeadName, defaultStartAt,
 }: Props) {
   const { user } = useAuth();
