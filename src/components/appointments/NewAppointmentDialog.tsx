@@ -30,7 +30,7 @@ export default function NewAppointmentDialog({
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [leads, setLeads] = useState<any[]>([]);
-  const [leadMode, setLeadMode] = useState<"existing" | "new">(defaultLeadId ? "existing" : "existing");
+  const [leadMode, setLeadMode] = useState<"existing" | "new">("existing");
   const [prospect, setProspect] = useState(EMPTY_PROSPECT);
   const [createMeet, setCreateMeet] = useState(false);
   const [meetLink, setMeetLink] = useState<string | null>(null);
@@ -42,36 +42,39 @@ export default function NewAppointmentDialog({
     location: "",
     notes: "",
   });
+  // Track whether end_at has been auto-filled for the current start_at
+  const autoFilledRef = useRef<string>("");
 
+  // Sync props when dialog opens or defaults change
   useEffect(() => {
-    setForm((f) => ({
-      ...f,
+    if (!open) return;
+    fetchLeads();
+    setMeetLink(null);
+    autoFilledRef.current = "";
+    setForm({
+      title: "",
       lead_id: defaultLeadId ?? "",
-      start_at: defaultStartAt ?? f.start_at,
-    }));
-    if (defaultLeadId) setLeadMode("existing");
-  }, [defaultLeadId, defaultStartAt]);
+      start_at: defaultStartAt ?? "",
+      end_at: "",
+      location: "",
+      notes: "",
+    });
+    setProspect(EMPTY_PROSPECT);
+    setLeadMode("existing");
+    setCreateMeet(false);
+  }, [open, defaultLeadId, defaultStartAt]);
 
-  // Auto-fill end_at = start_at + 1h
+  // Auto-fill end_at = start_at + 1h (only once per start_at value)
   useEffect(() => {
-    if (form.start_at && !form.end_at) {
+    if (form.start_at && !form.end_at && autoFilledRef.current !== form.start_at) {
+      autoFilledRef.current = form.start_at;
       const d = new Date(form.start_at);
       d.setHours(d.getHours() + 1);
       const pad = (n: number) => String(n).padStart(2, "0");
       const endStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
       setForm((f) => ({ ...f, end_at: endStr }));
     }
-  }, [form.start_at]);
-
-  useEffect(() => {
-    if (open) {
-      fetchLeads();
-      setMeetLink(null);
-      if (!defaultStartAt) {
-        setForm((f) => ({ ...f, end_at: "" }));
-      }
-    }
-  }, [open]);
+  }, [form.start_at, form.end_at]);
 
   const fetchLeads = async () => {
     const { data } = await supabase
