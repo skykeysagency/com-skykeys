@@ -69,7 +69,7 @@ export default function CalendarPage() {
     }
   }, [viewMode]);
 
-  const fetchAppointments = async () => {
+  const getViewRange = () => {
     let start: string, end: string;
     if (viewMode === "month") {
       start = startOfMonth(currentDate).toISOString();
@@ -81,6 +81,11 @@ export default function CalendarPage() {
       start = startOfDay(currentDate).toISOString();
       end = new Date(startOfDay(currentDate).getTime() + 86400000).toISOString();
     }
+    return { start, end };
+  };
+
+  const fetchAppointments = async () => {
+    const { start, end } = getViewRange();
     const { data } = await supabase
       .from("appointments")
       .select("*, leads(first_name, last_name, company)")
@@ -88,6 +93,32 @@ export default function CalendarPage() {
       .lte("start_at", end)
       .order("start_at");
     setAppointments(data ?? []);
+  };
+
+  const fetchBusySlots = async () => {
+    if (!user) return;
+    try {
+      const { start, end } = getViewRange();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-busy`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ timeMin: start, timeMax: end }),
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setBusySlots(data.busy ?? []);
+      }
+    } catch {
+      // Silently ignore — Google Calendar may not be connected
+    }
   };
 
   const goBack = () => {
