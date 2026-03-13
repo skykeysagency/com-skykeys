@@ -268,6 +268,12 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
   };
   const goPrev = () => { if (!isFirst) setIndex(index - 1); };
 
+  const handleCloseAppt = useCallback(() => setShowAppt(false), []);
+  const handleCreatedAppt = useCallback(() => {
+    toast.success("RDV créé depuis le mode appel !");
+    onLeadUpdated();
+  }, [onLeadUpdated]);
+
   if (!lead) return null;
 
   const callRingColors: Record<CallStatus, string> = {
