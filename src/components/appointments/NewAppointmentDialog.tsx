@@ -64,7 +64,7 @@ function NewAppointmentDialog({
     setCreateMeet(false);
   }, [open, defaultLeadId, defaultStartAt]);
 
-  // Auto-fill end_at = start_at + 1h (only once per start_at value)
+  // Auto-fill end_at = start_at + 1h (only once per start_at value, no form.end_at dep)
   useEffect(() => {
     if (form.start_at && !form.end_at && autoFilledRef.current !== form.start_at) {
       autoFilledRef.current = form.start_at;
@@ -74,7 +74,8 @@ function NewAppointmentDialog({
       const endStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
       setForm((f) => ({ ...f, end_at: endStr }));
     }
-  }, [form.start_at, form.end_at]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.start_at]); // intentionally omit form.end_at to avoid re-trigger loop
 
   const fetchLeads = async () => {
     const { data } = await supabase

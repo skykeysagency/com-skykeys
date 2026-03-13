@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -267,6 +267,12 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
     else { toast.info("Tous les leads ont été traités 🎉"); onClose(); }
   };
   const goPrev = () => { if (!isFirst) setIndex(index - 1); };
+
+  const handleCloseAppt = useCallback(() => setShowAppt(false), []);
+  const handleCreatedAppt = useCallback(() => {
+    toast.success("RDV créé depuis le mode appel !");
+    onLeadUpdated();
+  }, [onLeadUpdated]);
 
   if (!lead) return null;
 
@@ -589,8 +595,8 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
 
       <NewAppointmentDialog
         open={showAppt}
-        onClose={() => setShowAppt(false)}
-        onCreated={() => { toast.success("RDV créé depuis le mode appel !"); onLeadUpdated(); }}
+        onClose={handleCloseAppt}
+        onCreated={handleCreatedAppt}
         defaultLeadId={lead.id}
         defaultLeadName={`${lead.first_name} ${lead.last_name}`}
       />
