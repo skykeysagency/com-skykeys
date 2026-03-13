@@ -209,7 +209,7 @@ function NewAppointmentDialog({
   const isLocked = !!defaultLeadId;
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Nouveau rendez-vous</DialogTitle>
