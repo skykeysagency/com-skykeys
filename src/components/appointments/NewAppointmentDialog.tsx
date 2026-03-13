@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ const EMPTY_PROSPECT = {
   first_name: "", last_name: "", email: "", phone: "", company: "", position: "",
 };
 
-export default function NewAppointmentDialog({
+function NewAppointmentDialog({
   open, onClose, onCreated, defaultLeadId, defaultLeadName, defaultStartAt,
 }: Props) {
   const { user } = useAuth();
@@ -201,9 +201,9 @@ export default function NewAppointmentDialog({
     setLoading(false);
   };
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     onClose();
-  };
+  }, [onClose]);
 
   const isLocked = !!defaultLeadId;
 
@@ -446,6 +446,8 @@ export default function NewAppointmentDialog({
     </Dialog>
   );
 }
+
+export default memo(NewAppointmentDialog);
 
 function Label({ children }: { children: React.ReactNode }) {
   return <label className="text-sm font-medium text-foreground">{children}</label>;

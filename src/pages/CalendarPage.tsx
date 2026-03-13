@@ -504,9 +504,11 @@ export default function CalendarPage() {
     setShowDialog(true);
   }, [busySlots]);
 
-  const openNewRdv = () => { setPrefilledStart(undefined); setShowDialog(true); };
+  const openNewRdv = useCallback(() => { setPrefilledStart(undefined); setShowDialog(true); }, []);
   const openAptDetail = useCallback((id: string) => { setSelectedAptId(id); setShowDetail(true); }, []);
   const handleDayClick = useCallback((day: Date) => { setCurrentDate(day); setViewMode("day"); }, []);
+  const handleDialogClose = useCallback(() => { setShowDialog(false); setPrefilledStart(undefined); }, []);
+  const handleDetailClose = useCallback(() => { setShowDetail(false); setSelectedAptId(null); }, []);
 
   const monthStart = startOfMonth(currentDate);
   const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
@@ -637,7 +639,7 @@ export default function CalendarPage() {
 
       <NewAppointmentDialog
         open={showDialog}
-        onClose={() => { setShowDialog(false); setPrefilledStart(undefined); }}
+        onClose={handleDialogClose}
         onCreated={fetchAppointments}
         defaultStartAt={prefilledStart}
       />
@@ -645,7 +647,7 @@ export default function CalendarPage() {
       <AppointmentDetailSheet
         appointmentId={selectedAptId}
         open={showDetail}
-        onClose={() => { setShowDetail(false); setSelectedAptId(null); }}
+        onClose={handleDetailClose}
         onDeleted={fetchAppointments}
       />
     </div>
