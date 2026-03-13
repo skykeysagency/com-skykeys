@@ -53,6 +53,7 @@ export default function CalendarPage() {
   const [selectedAptId, setSelectedAptId] = useState<string | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [busySlots, setBusySlots] = useState<{ start: string; end: string }[]>([]);
 
   useEffect(() => {
     const interval = setInterval(() => setNowMinute(new Date()), 60_000);
