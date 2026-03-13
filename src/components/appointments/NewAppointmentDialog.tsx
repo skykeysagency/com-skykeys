@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
@@ -30,7 +30,7 @@ export default function NewAppointmentDialog({
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [leads, setLeads] = useState<any[]>([]);
-  const [leadMode, setLeadMode] = useState<"existing" | "new">(defaultLeadId ? "existing" : "existing");
+  const [leadMode, setLeadMode] = useState<"existing" | "new">("existing");
   const [prospect, setProspect] = useState(EMPTY_PROSPECT);
   const [createMeet, setCreateMeet] = useState(false);
   const [meetLink, setMeetLink] = useState<string | null>(null);
@@ -42,36 +42,39 @@ export default function NewAppointmentDialog({
     location: "",
     notes: "",
   });
+  // Track whether end_at has been auto-filled for the current start_at
+  const autoFilledRef = useRef<string>("");
 
+  // Sync props when dialog opens or defaults change
   useEffect(() => {
-    setForm((f) => ({
-      ...f,
+    if (!open) return;
+    fetchLeads();
+    setMeetLink(null);
+    autoFilledRef.current = "";
+    setForm({
+      title: "",
       lead_id: defaultLeadId ?? "",
-      start_at: defaultStartAt ?? f.start_at,
-    }));
-    if (defaultLeadId) setLeadMode("existing");
-  }, [defaultLeadId, defaultStartAt]);
+      start_at: defaultStartAt ?? "",
+      end_at: "",
+      location: "",
+      notes: "",
+    });
+    setProspect(EMPTY_PROSPECT);
+    setLeadMode("existing");
+    setCreateMeet(false);
+  }, [open, defaultLeadId, defaultStartAt]);
 
-  // Auto-fill end_at = start_at + 1h
+  // Auto-fill end_at = start_at + 1h (only once per start_at value)
   useEffect(() => {
-    if (form.start_at && !form.end_at) {
+    if (form.start_at && !form.end_at && autoFilledRef.current !== form.start_at) {
+      autoFilledRef.current = form.start_at;
       const d = new Date(form.start_at);
       d.setHours(d.getHours() + 1);
       const pad = (n: number) => String(n).padStart(2, "0");
       const endStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
       setForm((f) => ({ ...f, end_at: endStr }));
     }
-  }, [form.start_at]);
-
-  useEffect(() => {
-    if (open) {
-      fetchLeads();
-      setMeetLink(null);
-      if (!defaultStartAt) {
-        setForm((f) => ({ ...f, end_at: "" }));
-      }
-    }
-  }, [open]);
+  }, [form.start_at, form.end_at]);
 
   const fetchLeads = async () => {
     const { data } = await supabase
@@ -177,41 +180,28 @@ export default function NewAppointmentDialog({
         const meetData = await meetRes.json();
         if (meetData.meet_link) {
           setMeetLink(meetData.meet_link);
+          onCreated();
           toast.success("Lien Google Meet créé ! Invitation envoyée au client.");
-          // Stay open to show the meet link — user closes manually
         } else {
-          // Meet failed but appointment was created — close and notify
           toast.warning(meetData.error || "RDV créé mais Google Meet non généré.");
           onCreated();
           onClose();
-          resetForm();
         }
       } catch {
         toast.warning("RDV créé mais erreur lors de la création Google Meet.");
         onCreated();
         onClose();
-        resetForm();
       }
     } else {
       toast.success("Rendez-vous créé !");
       onCreated();
       onClose();
-      resetForm();
     }
 
     setLoading(false);
   };
 
-  const resetForm = () => {
-    setForm({ title: "", lead_id: defaultLeadId ?? "", start_at: defaultStartAt ?? "", end_at: "", location: "", notes: "" });
-    setProspect(EMPTY_PROSPECT);
-    setLeadMode("existing");
-    setCreateMeet(false);
-    setMeetLink(null);
-  };
-
   const handleClose = () => {
-    if (meetLink) { onCreated(); resetForm(); }
     onClose();
   };
 
@@ -222,13 +212,14 @@ export default function NewAppointmentDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Nouveau rendez-vous</DialogTitle>
+          <DialogDescription>Planifiez un RDV et associez-le à un lead.</DialogDescription>
         </DialogHeader>
 
         {meetLink ? (
           // ── Meet link success screen ──
           <div className="space-y-4 mt-2 text-center py-4">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto">
-              <Video className="w-8 h-8 text-emerald-600" />
+            <div className="w-16 h-16 rounded-2xl bg-accent border border-border flex items-center justify-center mx-auto">
+              <Video className="w-8 h-8 text-primary" />
             </div>
             <div>
               <p className="font-bold text-foreground text-lg">Rendez-vous créé !</p>
@@ -238,9 +229,9 @@ export default function NewAppointmentDialog({
               href={meetLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold text-sm hover:bg-emerald-100 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-accent border border-border text-foreground font-semibold text-sm hover:bg-accent/80 transition-colors"
             >
-              <Video className="w-4 h-4" />
+              <Video className="w-4 h-4 text-primary" />
               Rejoindre Google Meet
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
@@ -428,7 +419,7 @@ export default function NewAppointmentDialog({
                   htmlFor="create-meet"
                   className="flex items-center gap-2 text-sm font-semibold text-foreground cursor-pointer"
                 >
-                  <Video className="w-4 h-4 text-emerald-600" />
+                  <Video className="w-4 h-4 text-primary" />
                   Créer un lien Google Meet
                 </label>
                 <p className="text-xs text-muted-foreground mt-0.5">
