@@ -202,8 +202,8 @@ function NewAppointmentDialog({
     setLoading(false);
   };
 
-  const handleClose = useCallback(() => {
-    onClose();
+  const handleOpenChange = useCallback((isOpen: boolean) => {
+    if (!isOpen) onClose();
   }, [onClose]);
 
   const isLocked = !!defaultLeadId;
