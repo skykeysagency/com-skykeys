@@ -180,41 +180,28 @@ export default function NewAppointmentDialog({
         const meetData = await meetRes.json();
         if (meetData.meet_link) {
           setMeetLink(meetData.meet_link);
+          onCreated();
           toast.success("Lien Google Meet créé ! Invitation envoyée au client.");
-          // Stay open to show the meet link — user closes manually
         } else {
-          // Meet failed but appointment was created — close and notify
           toast.warning(meetData.error || "RDV créé mais Google Meet non généré.");
           onCreated();
           onClose();
-          resetForm();
         }
       } catch {
         toast.warning("RDV créé mais erreur lors de la création Google Meet.");
         onCreated();
         onClose();
-        resetForm();
       }
     } else {
       toast.success("Rendez-vous créé !");
       onCreated();
       onClose();
-      resetForm();
     }
 
     setLoading(false);
   };
 
-  const resetForm = () => {
-    setForm({ title: "", lead_id: defaultLeadId ?? "", start_at: defaultStartAt ?? "", end_at: "", location: "", notes: "" });
-    setProspect(EMPTY_PROSPECT);
-    setLeadMode("existing");
-    setCreateMeet(false);
-    setMeetLink(null);
-  };
-
   const handleClose = () => {
-    if (meetLink) { onCreated(); resetForm(); }
     onClose();
   };
 
@@ -225,6 +212,7 @@ export default function NewAppointmentDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Nouveau rendez-vous</DialogTitle>
+          <DialogDescription>Planifiez un RDV et associez-le à un lead.</DialogDescription>
         </DialogHeader>
 
         {meetLink ? (
