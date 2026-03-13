@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, User, Phone, Key, Check, Shield, Mail, Briefcase, ExternalLink } from "lucide-react";
+import { Loader2, User, Phone, Key, Check, Shield, Mail, Briefcase, ExternalLink, Video, CheckCircle2, Link2 } from "lucide-react";
 
 export default function Settings() {
   const { user } = useAuth();
