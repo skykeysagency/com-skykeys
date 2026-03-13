@@ -185,7 +185,22 @@ export default function CalendarPage() {
     if ((e.target as HTMLElement).closest("[data-apt]")) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const y = e.clientY - rect.top;
-    setPrefilledStart(yToDatetime(y, day));
+    const clickedDatetime = yToDatetime(y, day);
+    const clickedDate = new Date(clickedDatetime);
+
+    // Check if this time slot is busy in Google Calendar
+    const isBusy = busySlots.some((slot) => {
+      const slotStart = new Date(slot.start);
+      const slotEnd = new Date(slot.end);
+      return clickedDate >= slotStart && clickedDate < slotEnd;
+    });
+
+    if (isBusy) {
+      toast.info("Ce créneau est déjà occupé dans le calendrier Google.");
+      return;
+    }
+
+    setPrefilledStart(clickedDatetime);
     setShowDialog(true);
   };
 
