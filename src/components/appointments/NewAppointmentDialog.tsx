@@ -237,7 +237,7 @@ function NewAppointmentDialog({
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
             <div>
-              <Button onClick={handleClose} className="w-full">Fermer</Button>
+              <Button onClick={onClose} className="w-full">Fermer</Button>
             </div>
           </div>
         ) : (
