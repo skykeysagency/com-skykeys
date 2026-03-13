@@ -10,13 +10,17 @@ import { Loader2, User, Phone, Key, Check, Shield, Mail, Briefcase, ExternalLink
 
 export default function Settings() {
   const { user } = useAuth();
+  const { isAdmin } = useRole();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ first_name: "", last_name: "", position: "", aircall_api_key: "" });
   const [showKey, setShowKey] = useState(false);
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [checkingGoogle, setCheckingGoogle] = useState(false);
 
   useEffect(() => { fetchProfile(); }, [user]);
+  useEffect(() => { if (isAdmin) checkGoogleConnection(); }, [isAdmin]);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -32,6 +36,40 @@ export default function Settings() {
       });
     }
     setLoading(false);
+  };
+
+  const checkGoogleConnection = async () => {
+    setCheckingGoogle(true);
+    const { data } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "google_refresh_token")
+      .single();
+    setGoogleConnected(!!data?.value);
+    setCheckingGoogle(false);
+  };
+
+  const connectGoogle = () => {
+    const clientId = "487021133980-t6s24vsvukf8rl86sfg7v1rtlsnpn56i.apps.googleusercontent.com";
+    const redirectUri = `${window.location.origin}/calendar`;
+    const scope = [
+      "https://www.googleapis.com/auth/calendar",
+      "https://www.googleapis.com/auth/calendar.events",
+    ].join(" ");
+    const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    url.searchParams.set("client_id", clientId);
+    url.searchParams.set("redirect_uri", redirectUri);
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("scope", scope);
+    url.searchParams.set("access_type", "offline");
+    url.searchParams.set("prompt", "consent");
+    window.location.href = url.toString();
+  };
+
+  const disconnectGoogle = async () => {
+    await supabase.from("app_settings").delete().eq("key", "google_refresh_token");
+    setGoogleConnected(false);
+    toast.success("Google Calendar déconnecté");
   };
 
   const handleSave = async () => {
