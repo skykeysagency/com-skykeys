@@ -211,6 +211,66 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      {/* ── Google Calendar card (admin only) ── */}
+      {isAdmin && (
+        <Card className="border-border shadow-card">
+          <CardHeader className="pb-4 border-b border-border">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Video className="w-4 h-4 text-primary" /> Intégration Google Calendar & Meet
+            </CardTitle>
+            <CardDescription>
+              Connectez votre compte Google pour créer des liens Google Meet automatiquement lors de la création de RDV.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-5 space-y-4">
+            {checkingGoogle ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" /> Vérification de la connexion…
+              </div>
+            ) : googleConnected ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-emerald-800">Google Calendar connecté</p>
+                    <p className="text-xs text-emerald-600 mt-0.5">Les RDV créés peuvent générer un lien Google Meet et envoyer les invitations.</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 text-xs text-destructive border-destructive/30 hover:bg-destructive/5"
+                  onClick={disconnectGoogle}
+                >
+                  <Link2 className="w-3.5 h-3.5" />
+                  Déconnecter Google Calendar
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="rounded-xl bg-accent border border-accent-foreground/10 p-4 space-y-2">
+                  <p className="text-xs font-semibold text-accent-foreground flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5" /> Connexion requise
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Cliquez sur le bouton ci-dessous pour autoriser Sky Call à créer des événements dans votre Google Calendar et générer des liens Meet.
+                  </p>
+                </div>
+                <Button
+                  onClick={connectGoogle}
+                  className="gap-2 shadow-primary"
+                  size="sm"
+                >
+                  <Video className="w-4 h-4" />
+                  Connecter Google Calendar
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* ── Save button ── */}
       <div className="flex justify-end pt-1">
         <Button onClick={handleSave} disabled={saving} className="gap-2 shadow-primary min-w-[160px]">

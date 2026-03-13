@@ -11,6 +11,7 @@ import Dashboard from "@/pages/Dashboard";
 import Leads from "@/pages/Leads";
 import LeadDetail from "@/pages/LeadDetail";
 import CalendarPage from "@/pages/CalendarPage";
+import GoogleCalendarCallback from "@/pages/GoogleCalendarCallback";
 import Settings from "@/pages/Settings";
 import Admin from "@/pages/Admin";
 import NotFound from "./pages/NotFound";
