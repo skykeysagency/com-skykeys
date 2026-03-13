@@ -60,7 +60,7 @@ export default function CalendarPage() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => { fetchAppointments(); }, [user, currentDate, viewMode]);
+  useEffect(() => { fetchAppointments(); fetchBusySlots(); }, [user, currentDate, viewMode]);
 
   useEffect(() => {
     if (scrollRef.current) {
