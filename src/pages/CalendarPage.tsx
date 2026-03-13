@@ -391,27 +391,27 @@ export default function CalendarPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const getViewRange = useCallback(() => {
-    if (viewMode === "month") {
+  // Stable date key: only changes when the visible range actually changes
+  const dateKey = currentDate.toISOString().slice(0, 10);
+
+  const getViewRange = useCallback((date: Date, mode: ViewMode) => {
+    if (mode === "month") {
+      return { start: startOfMonth(date).toISOString(), end: endOfMonth(date).toISOString() };
+    } else if (mode === "week") {
       return {
-        start: startOfMonth(currentDate).toISOString(),
-        end: endOfMonth(currentDate).toISOString(),
-      };
-    } else if (viewMode === "week") {
-      return {
-        start: startOfWeek(currentDate, { weekStartsOn: 1 }).toISOString(),
-        end: endOfWeek(currentDate, { weekStartsOn: 1 }).toISOString(),
+        start: startOfWeek(date, { weekStartsOn: 1 }).toISOString(),
+        end: endOfWeek(date, { weekStartsOn: 1 }).toISOString(),
       };
     } else {
       return {
-        start: startOfDay(currentDate).toISOString(),
-        end: new Date(startOfDay(currentDate).getTime() + 86400000).toISOString(),
+        start: startOfDay(date).toISOString(),
+        end: new Date(startOfDay(date).getTime() + 86400000).toISOString(),
       };
     }
-  }, [viewMode, currentDate]);
+  }, []);
 
   const fetchAppointments = useCallback(async () => {
-    const { start, end } = getViewRange();
+    const { start, end } = getViewRange(currentDate, viewMode);
     const { data } = await supabase
       .from("appointments")
       .select("*, leads(first_name, last_name, company)")
@@ -419,11 +419,12 @@ export default function CalendarPage() {
       .lte("start_at", end)
       .order("start_at");
     setAppointments(data ?? []);
-  }, [getViewRange]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateKey, viewMode, getViewRange]);
 
   const fetchBusySlots = useCallback(async () => {
     try {
-      const { start, end } = getViewRange();
+      const { start, end } = getViewRange(currentDate, viewMode);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       const res = await fetch(
@@ -444,7 +445,8 @@ export default function CalendarPage() {
     } catch {
       // Silently ignore
     }
-  }, [getViewRange]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateKey, viewMode, getViewRange]);
 
   useEffect(() => {
     fetchAppointments();
