@@ -421,9 +421,7 @@ export default function CalendarPage() {
     setAppointments(data ?? []);
   }, [getViewRange]);
 
-  const userId = user?.id;
   const fetchBusySlots = useCallback(async () => {
-    if (!userId) return;
     try {
       const { start, end } = getViewRange();
       const { data: { session } } = await supabase.auth.getSession();
@@ -446,7 +444,7 @@ export default function CalendarPage() {
     } catch {
       // Silently ignore
     }
-  }, [userId, getViewRange]);
+  }, [getViewRange]);
 
   useEffect(() => {
     fetchAppointments();
