@@ -391,8 +391,6 @@ export default function CalendarPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const userId = user?.id;
-
   const getViewRange = useCallback(() => {
     if (viewMode === "month") {
       return {
