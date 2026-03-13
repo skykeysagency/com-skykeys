@@ -656,7 +656,7 @@ export default function CalendarPage() {
       <NewAppointmentDialog
         open={showDialog}
         onClose={handleDialogClose}
-        onCreated={fetchAppointments}
+        onCreated={onCreatedStable}
         defaultStartAt={prefilledStart}
       />
 
@@ -664,7 +664,7 @@ export default function CalendarPage() {
         appointmentId={selectedAptId}
         open={showDetail}
         onClose={handleDetailClose}
-        onDeleted={fetchAppointments}
+        onDeleted={onCreatedStable}
       />
     </div>
   );
