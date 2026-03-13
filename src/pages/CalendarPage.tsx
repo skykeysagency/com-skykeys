@@ -391,10 +391,8 @@ export default function CalendarPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Stable date key: only changes when the visible range actually changes
-  const dateKey = currentDate.toISOString().slice(0, 10);
-
-  const getViewRange = useCallback((date: Date, mode: ViewMode) => {
+  // Pure helper — not a hook, no closure over state
+  function getViewRange(date: Date, mode: ViewMode) {
     if (mode === "month") {
       return { start: startOfMonth(date).toISOString(), end: endOfMonth(date).toISOString() };
     } else if (mode === "week") {
@@ -408,33 +406,32 @@ export default function CalendarPage() {
         end: new Date(startOfDay(date).getTime() + 86400000).toISOString(),
       };
     }
-  }, []);
+  }
 
-  const fetchAppointments = useCallback(async () => {
-    const { start, end } = getViewRange(currentDate, viewMode);
-    const { data } = await supabase
-      .from("appointments")
-      .select("*, leads(first_name, last_name, company)")
-      .gte("start_at", start)
-      .lte("start_at", end)
-      .order("start_at");
-    setAppointments(data ?? []);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateKey, viewMode, getViewRange]);
+  // Use a ref so the identity is stable — avoids infinite effect loops
+  const fetchRef = useRef<(() => void) | null>(null);
 
-  const fetchBusySlots = useCallback(async () => {
+  const doFetch = useCallback(async (date: Date, mode: ViewMode) => {
+    const { start, end } = getViewRange(date, mode);
+    const [aptsResult] = await Promise.all([
+      supabase
+        .from("appointments")
+        .select("*, leads(first_name, last_name, company)")
+        .gte("start_at", start)
+        .lte("start_at", end)
+        .order("start_at"),
+    ]);
+    setAppointments(aptsResult.data ?? []);
+
+    // Fetch busy slots without blocking
     try {
-      const { start, end } = getViewRange(currentDate, viewMode);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-busy`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
           body: JSON.stringify({ timeMin: start, timeMax: end }),
         }
       );
@@ -442,16 +439,35 @@ export default function CalendarPage() {
         const data = await res.json();
         setBusySlots(data.busy ?? []);
       }
-    } catch {
-      // Silently ignore
-    }
+    } catch { /* silently ignore */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateKey, viewMode, getViewRange]);
+  }, []); // no deps — reads args directly
+
+  // Keep fetchRef pointing at the latest doFetch for stable onCreated / onDeleted props
+  const fetchAppointments = useCallback(() => {
+    doFetch(currentDate, viewMode);
+  }, [doFetch, currentDate, viewMode]);
+
+  fetchRef.current = fetchAppointments;
+
+  // Stable callback for dialog props — never changes reference
+  const onCreatedStable = useCallback(() => { fetchRef.current?.(); }, []);
+
+  const dateKey = `${currentDate.toISOString().slice(0, 10)}-${viewMode}`;
+  const prevDateKey = useRef(dateKey);
 
   useEffect(() => {
-    fetchAppointments();
-    fetchBusySlots();
-  }, [fetchAppointments, fetchBusySlots]);
+    if (prevDateKey.current === dateKey) return;
+    prevDateKey.current = dateKey;
+    doFetch(currentDate, viewMode);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateKey]);
+
+  // Initial fetch on mount only
+  useEffect(() => {
+    doFetch(currentDate, viewMode);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
