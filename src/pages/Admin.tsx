@@ -859,6 +859,28 @@ export default function AdminPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* ── Delete all leads for user confirm ── */}
+      <AlertDialog open={!!deletingUserLeadsId} onOpenChange={(o) => !o && setDeletingUserLeadsId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer tous les leads de {deletingUserLeadsName} ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action supprimera définitivement <strong>{deletingUserLeadsCount} lead{deletingUserLeadsCount > 1 ? "s" : ""}</strong> ainsi que toutes les données associées (activités, appels, rendez-vous liés). Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingLeads}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={deleteAllLeadsForUser}
+              disabled={isDeletingLeads}
+            >
+              {isDeletingLeads ? <Loader2 className="w-4 h-4 animate-spin" /> : `Supprimer les ${deletingUserLeadsCount} leads`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* ── Create user dialog ── */}
       <Dialog open={userDialog} onOpenChange={(o) => !o && setUserDialog(false)}>
         <DialogContent className="max-w-md">
