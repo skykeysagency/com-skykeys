@@ -136,6 +136,49 @@ export default function AdminPage() {
     setLoadingApts(false);
   };
 
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id, first_name, last_name, email");
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("user_id, role");
+    const { data: leadsData } = await supabase
+      .from("leads")
+      .select("user_id");
+
+    const leadCountByUser: Record<string, number> = {};
+    (leadsData ?? []).forEach((l: any) => {
+      leadCountByUser[l.user_id] = (leadCountByUser[l.user_id] ?? 0) + 1;
+    });
+
+    const roleMap: Record<string, string> = {};
+    (roles ?? []).forEach((r: any) => { roleMap[r.user_id] = r.role; });
+
+    const list = (profiles ?? []).map((p: any) => ({
+      ...p,
+      role: roleMap[p.user_id] ?? "commercial",
+      leads_count: leadCountByUser[p.user_id] ?? 0,
+    }));
+    setUsersList(list);
+    setLoadingUsers(false);
+  };
+
+  const deleteAllLeadsForUser = async () => {
+    if (!deletingUserLeadsId) return;
+    setIsDeletingLeads(true);
+    const { error } = await supabase.from("leads").delete().eq("user_id", deletingUserLeadsId);
+    if (error) toast.error("Erreur lors de la suppression des leads");
+    else {
+      toast.success(`Tous les leads de ${deletingUserLeadsName} ont été supprimés`);
+      fetchLeads();
+      fetchUsers();
+    }
+    setDeletingUserLeadsId(null);
+    setIsDeletingLeads(false);
+  };
+
   // ── Lead CRUD ──────────────────────────────────────
   const openCreateLead = () => {
     setLeadForm(EMPTY_LEAD);
