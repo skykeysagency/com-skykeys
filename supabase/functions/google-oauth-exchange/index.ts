@@ -20,16 +20,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Validate the user is an admin
+    // Validate the user is authenticated
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -72,20 +71,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Store refresh token as a secret via management API
-    // We use the service role to update the secret in the vault / env
-    const projectId = Deno.env.get("SUPABASE_URL")!.replace("https://", "").split(".")[0];
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    // Store refresh token in Supabase vault (secrets table simulation via admin)
-    // We store it as a special profile setting for the app
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      serviceKey
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Store in a simple app_config table or we can use profiles for admin
-    // For simplicity, store in a dedicated app_settings table
     const { error: upsertError } = await adminClient
       .from("app_settings")
       .upsert({ key: "google_refresh_token", value: tokenData.refresh_token }, { onConflict: "key" });

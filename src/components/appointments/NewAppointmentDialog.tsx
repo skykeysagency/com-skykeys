@@ -178,11 +178,19 @@ export default function NewAppointmentDialog({
         if (meetData.meet_link) {
           setMeetLink(meetData.meet_link);
           toast.success("Lien Google Meet créé ! Invitation envoyée au client.");
+          // Stay open to show the meet link — user closes manually
         } else {
+          // Meet failed but appointment was created — close and notify
           toast.warning(meetData.error || "RDV créé mais Google Meet non généré.");
+          onCreated();
+          onClose();
+          resetForm();
         }
       } catch {
         toast.warning("RDV créé mais erreur lors de la création Google Meet.");
+        onCreated();
+        onClose();
+        resetForm();
       }
     } else {
       toast.success("Rendez-vous créé !");

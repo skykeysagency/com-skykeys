@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   format, startOfMonth, endOfMonth,
@@ -52,13 +53,14 @@ export default function CalendarPage() {
   const [selectedAptId, setSelectedAptId] = useState<string | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [busySlots, setBusySlots] = useState<{ start: string; end: string }[]>([]);
 
   useEffect(() => {
     const interval = setInterval(() => setNowMinute(new Date()), 60_000);
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => { fetchAppointments(); }, [user, currentDate, viewMode]);
+  useEffect(() => { fetchAppointments(); fetchBusySlots(); }, [user, currentDate, viewMode]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -67,7 +69,7 @@ export default function CalendarPage() {
     }
   }, [viewMode]);
 
-  const fetchAppointments = async () => {
+  const getViewRange = () => {
     let start: string, end: string;
     if (viewMode === "month") {
       start = startOfMonth(currentDate).toISOString();
@@ -79,6 +81,11 @@ export default function CalendarPage() {
       start = startOfDay(currentDate).toISOString();
       end = new Date(startOfDay(currentDate).getTime() + 86400000).toISOString();
     }
+    return { start, end };
+  };
+
+  const fetchAppointments = async () => {
+    const { start, end } = getViewRange();
     const { data } = await supabase
       .from("appointments")
       .select("*, leads(first_name, last_name, company)")
@@ -86,6 +93,32 @@ export default function CalendarPage() {
       .lte("start_at", end)
       .order("start_at");
     setAppointments(data ?? []);
+  };
+
+  const fetchBusySlots = async () => {
+    if (!user) return;
+    try {
+      const { start, end } = getViewRange();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-busy`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ timeMin: start, timeMax: end }),
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setBusySlots(data.busy ?? []);
+      }
+    } catch {
+      // Silently ignore — Google Calendar may not be connected
+    }
   };
 
   const goBack = () => {
@@ -152,7 +185,22 @@ export default function CalendarPage() {
     if ((e.target as HTMLElement).closest("[data-apt]")) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const y = e.clientY - rect.top;
-    setPrefilledStart(yToDatetime(y, day));
+    const clickedDatetime = yToDatetime(y, day);
+    const clickedDate = new Date(clickedDatetime);
+
+    // Check if this time slot is busy in Google Calendar
+    const isBusy = busySlots.some((slot) => {
+      const slotStart = new Date(slot.start);
+      const slotEnd = new Date(slot.end);
+      return clickedDate >= slotStart && clickedDate < slotEnd;
+    });
+
+    if (isBusy) {
+      toast.info("Ce créneau est déjà occupé dans le calendrier Google.");
+      return;
+    }
+
+    setPrefilledStart(clickedDatetime);
     setShowDialog(true);
   };
 
@@ -256,6 +304,34 @@ export default function CalendarPage() {
                       <div className="flex-1 h-[1.5px] bg-destructive/70" />
                     </div>
                   )}
+
+                  {/* Google Calendar busy slots — greyed blocked periods */}
+                  {busySlots
+                    .filter((slot) => isSameDay(parseISO(slot.start), day))
+                    .map((slot, idx) => {
+                      const slotStart = parseISO(slot.start);
+                      const slotEnd = parseISO(slot.end);
+                      const startMins = (getHours(slotStart) - START_HOUR) * 60 + getMinutes(slotStart);
+                      const durMins = Math.max(differenceInMinutes(slotEnd, slotStart), 15);
+                      const topPx = Math.max((startMins / 60) * HOUR_HEIGHT, 0);
+                      const heightPx = Math.max((durMins / 60) * HOUR_HEIGHT, 12);
+                      return (
+                        <div
+                          key={`busy-${idx}`}
+                          className="absolute inset-x-0 z-10 pointer-events-none"
+                          style={{ top: `${topPx}px`, height: `${heightPx}px` }}
+                        >
+                          <div
+                            className="h-full w-full border-t border-b border-muted-foreground/20"
+                            style={{
+                              backgroundColor: "hsl(var(--muted) / 0.55)",
+                              backgroundImage:
+                                "repeating-linear-gradient(45deg, transparent, transparent 5px, hsl(var(--muted-foreground) / 0.06) 5px, hsl(var(--muted-foreground) / 0.06) 10px)",
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
 
                   {/* Appointments */}
                   {dayApts.map((apt) => {
