@@ -305,6 +305,34 @@ export default function CalendarPage() {
                     </div>
                   )}
 
+                  {/* Google Calendar busy slots — greyed blocked periods */}
+                  {busySlots
+                    .filter((slot) => isSameDay(parseISO(slot.start), day))
+                    .map((slot, idx) => {
+                      const slotStart = parseISO(slot.start);
+                      const slotEnd = parseISO(slot.end);
+                      const startMins = (getHours(slotStart) - START_HOUR) * 60 + getMinutes(slotStart);
+                      const durMins = Math.max(differenceInMinutes(slotEnd, slotStart), 15);
+                      const topPx = Math.max((startMins / 60) * HOUR_HEIGHT, 0);
+                      const heightPx = Math.max((durMins / 60) * HOUR_HEIGHT, 12);
+                      return (
+                        <div
+                          key={`busy-${idx}`}
+                          className="absolute inset-x-0 z-10 pointer-events-none"
+                          style={{ top: `${topPx}px`, height: `${heightPx}px` }}
+                        >
+                          <div
+                            className="h-full w-full border-t border-b border-muted-foreground/20"
+                            style={{
+                              backgroundColor: "hsl(var(--muted) / 0.55)",
+                              backgroundImage:
+                                "repeating-linear-gradient(45deg, transparent, transparent 5px, hsl(var(--muted-foreground) / 0.06) 5px, hsl(var(--muted-foreground) / 0.06) 10px)",
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+
                   {/* Appointments */}
                   {dayApts.map((apt) => {
                     const { top, height } = aptTopHeight(apt);
