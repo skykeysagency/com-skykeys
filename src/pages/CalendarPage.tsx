@@ -505,20 +505,29 @@ export default function CalendarPage() {
     const clickedDatetime = yToDatetime(y, day);
     const clickedDate = new Date(clickedDatetime);
 
-    const isBusy = busySlots.some((slot) => {
+    const isBusyGoogle = busySlots.some((slot) => {
       const slotStart = new Date(slot.start);
       const slotEnd = new Date(slot.end);
       return clickedDate >= slotStart && clickedDate < slotEnd;
     });
-
-    if (isBusy) {
+    if (isBusyGoogle) {
       toast.info("Ce créneau est déjà occupé dans le calendrier Google.");
+      return;
+    }
+
+    const isBusyCrm = appointments.some((apt) => {
+      const start = new Date(apt.start_at);
+      const end = new Date(apt.end_at);
+      return clickedDate >= start && clickedDate < end;
+    });
+    if (isBusyCrm) {
+      toast.info("Ce créneau est déjà occupé par un rendez-vous du CRM.");
       return;
     }
 
     setPrefilledStart(clickedDatetime);
     setShowDialog(true);
-  }, [busySlots]);
+  }, [busySlots, appointments]);
 
   const openNewRdv = useCallback(() => { setPrefilledStart(undefined); setShowDialog(true); }, []);
   const openAptDetail = useCallback((id: string) => { setSelectedAptId(id); setShowDetail(true); }, []);

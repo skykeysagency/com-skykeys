@@ -253,10 +253,13 @@ export default function AdminPage() {
   const saveApt = async () => {
     if (!editingApt) return;
     setSavingApt(true);
+    // datetime-local = heure locale ; la BDD attend du UTC (timestamptz)
+    const startAtUtc = new Date(aptForm.start_at).toISOString();
+    const endAtUtc = new Date(aptForm.end_at || aptForm.start_at).toISOString();
     const payload = {
       title: aptForm.title,
-      start_at: aptForm.start_at,
-      end_at: aptForm.end_at || aptForm.start_at,
+      start_at: startAtUtc,
+      end_at: endAtUtc,
       location: aptForm.location || null,
       notes: aptForm.notes || null,
       lead_id: aptForm.lead_id || null,

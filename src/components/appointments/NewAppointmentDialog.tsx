@@ -124,11 +124,58 @@ function NewAppointmentDialog({
       leadName = lead ? `${lead.first_name} ${lead.last_name}`.trim() : "";
     }
 
+    // datetime-local donne une chaîne en heure locale ; la BDD est en UTC (timestamptz)
+    const startAtUtc = new Date(form.start_at).toISOString();
+    const endAtUtc = new Date(form.end_at || form.start_at).toISOString();
+
+    // Vérifier qu'aucun RDV CRM ne chevauche ce créneau (même utilisateur)
+    const { data: overlappingCrm } = await supabase
+      .from("appointments")
+      .select("id, title")
+      .eq("user_id", user.id)
+      .lt("start_at", endAtUtc)
+      .gt("end_at", startAtUtc);
+    if (overlappingCrm?.length) {
+      toast.error("Ce créneau chevauche un autre rendez-vous du CRM.");
+      setLoading(false);
+      return;
+    }
+
+    // Vérifier qu'aucun créneau Google Calendar ne chevauche
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-busy`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({ timeMin: startAtUtc, timeMax: endAtUtc }),
+          }
+        );
+        if (res.ok) {
+          const { busy } = await res.json();
+          const hasOverlap = (busy ?? []).some(
+            (slot: { start: string; end: string }) =>
+              new Date(slot.start).getTime() < new Date(endAtUtc).getTime() &&
+              new Date(slot.end).getTime() > new Date(startAtUtc).getTime()
+          );
+          if (hasOverlap) {
+            toast.error("Ce créneau est déjà occupé dans votre calendrier Google.");
+            setLoading(false);
+            return;
+          }
+        }
+      }
+    } catch {
+      /* ignore: on laisse créer le RDV si la vérification Google échoue */
+    }
+
     const payload: any = {
       user_id: user.id,
       title: form.title,
-      start_at: form.start_at,
-      end_at: form.end_at || form.start_at,
+      start_at: startAtUtc,
+      end_at: endAtUtc,
       location: form.location || null,
       notes: form.notes || null,
       lead_id: leadId,
@@ -169,8 +216,8 @@ function NewAppointmentDialog({
             },
             body: JSON.stringify({
               title: form.title,
-              start_at: form.start_at,
-              end_at: form.end_at || form.start_at,
+              start_at: startAtUtc,
+              end_at: endAtUtc,
               notes: form.notes || "",
               attendee_email: leadEmail,
               attendee_name: leadName,
