@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import {
   ShieldCheck, Users, CalendarDays, Plus, Pencil, Trash2,
   Loader2, Search, Building2, Phone, Mail,
-  Clock, MapPin, User, ExternalLink, UserPlus, Lock,
+  Clock, MapPin, User, ExternalLink, UserPlus, Lock, Layers,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
