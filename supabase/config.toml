@@ -2,3 +2,9 @@ project_id = "qgwapsjdpoxoyyriflzz"
 
 [functions.aircall-dial]
 verify_jwt = false
+
+[functions.google-calendar-event]
+verify_jwt = false
+
+[functions.google-oauth-exchange]
+verify_jwt = false

@@ -39,11 +39,31 @@ Deno.serve(async (req) => {
 
     const clientId = Deno.env.get("GOOGLE_ID_CLIENT");
     const clientSecret = Deno.env.get("GOOGLE_SECRET_ID");
-    const refreshToken = Deno.env.get("GOOGLE_REFRESH_TOKEN");
 
-    if (!clientId || !clientSecret || !refreshToken) {
+    if (!clientId || !clientSecret) {
       return new Response(
-        JSON.stringify({ error: "Google Calendar non configuré. Connectez votre compte Google dans les paramètres." }),
+        JSON.stringify({ error: "Google OAuth non configuré (GOOGLE_ID_CLIENT / GOOGLE_SECRET_ID manquants)." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Read refresh token from app_settings (stored after OAuth dance)
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { data: settingRow } = await adminClient
+      .from("app_settings")
+      .select("value")
+      .eq("key", "google_refresh_token")
+      .single();
+
+    const refreshToken = settingRow?.value;
+
+    if (!refreshToken) {
+      return new Response(
+        JSON.stringify({ error: "Google Calendar non connecté. Un administrateur doit connecter le compte Google dans les Paramètres." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -64,7 +84,7 @@ Deno.serve(async (req) => {
     if (!tokenRes.ok || !tokenData.access_token) {
       console.error("Token error:", tokenData);
       return new Response(
-        JSON.stringify({ error: "Impossible d'obtenir l'accès Google Calendar. Reconnectez votre compte." }),
+        JSON.stringify({ error: "Impossible d'obtenir l'accès Google Calendar. Reconnectez le compte Google dans les Paramètres." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -80,7 +100,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create Google Calendar event with Meet
+    // Create Google Calendar event with Meet conference
     const eventRes = await fetch(
       "https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1&sendUpdates=all",
       {
@@ -129,11 +149,7 @@ Deno.serve(async (req) => {
 
     // Update appointment with meet link and event id
     if (appointment_id) {
-      const supabaseAdmin = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
-      await supabaseAdmin
+      await adminClient
         .from("appointments")
         .update({ meeting_link: meetLink, google_event_id: googleEventId })
         .eq("id", appointment_id);
