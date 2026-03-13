@@ -589,8 +589,8 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
 
       <NewAppointmentDialog
         open={showAppt}
-        onClose={() => setShowAppt(false)}
-        onCreated={() => { toast.success("RDV créé depuis le mode appel !"); onLeadUpdated(); }}
+        onClose={handleCloseAppt}
+        onCreated={handleCreatedAppt}
         defaultLeadId={lead.id}
         defaultLeadName={`${lead.first_name} ${lead.last_name}`}
       />
