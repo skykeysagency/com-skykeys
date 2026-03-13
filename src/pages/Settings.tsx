@@ -51,7 +51,7 @@ export default function Settings() {
 
   const connectGoogle = () => {
     const clientId = "487021133980-t6s24vsvukf8rl86sfg7v1rtlsnpn56i.apps.googleusercontent.com";
-    const redirectUri = `${window.location.origin}/calendar`;
+    const redirectUri = `${window.location.origin}/google-auth-callback`;
     const scope = [
       "https://www.googleapis.com/auth/calendar",
       "https://www.googleapis.com/auth/calendar.events",
