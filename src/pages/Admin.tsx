@@ -101,12 +101,20 @@ export default function AdminPage() {
   const [userForm, setUserForm] = useState(EMPTY_USER_FORM);
   const [savingUser, setSavingUser] = useState(false);
 
+  // ── Users list state ───────────────────────────────
+  const [usersList, setUsersList] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [deletingUserLeadsId, setDeletingUserLeadsId] = useState<string | null>(null);
+  const [deletingUserLeadsName, setDeletingUserLeadsName] = useState<string>("");
+  const [deletingUserLeadsCount, setDeletingUserLeadsCount] = useState<number>(0);
+  const [isDeletingLeads, setIsDeletingLeads] = useState(false);
+
   useEffect(() => {
     if (!loadingRole && !isManager) navigate("/", { replace: true });
   }, [loadingRole, isManager]);
 
   useEffect(() => {
-    if (isManager) { fetchLeads(); fetchAppointments(); }
+    if (isManager) { fetchLeads(); fetchAppointments(); fetchUsers(); }
   }, [isManager]);
 
   // ── Fetch ──────────────────────────────────────────
