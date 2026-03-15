@@ -323,7 +323,11 @@ function NewAppointmentDialog({
                     setForm({ ...form, start_at: e.target.value, end_at: "" });
                   }}
                   required
+                  className={isWeekendDate(form.start_at) ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
+                {isWeekendDate(form.start_at) && (
+                  <p className="text-xs text-destructive font-medium">Vendredi, samedi et dimanche non disponibles.</p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label>Fin</Label>
