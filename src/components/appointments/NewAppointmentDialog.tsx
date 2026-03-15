@@ -8,8 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
-import { Loader2, UserSearch, UserPlus, Video, ExternalLink } from "lucide-react";
+import { Loader2, UserSearch, UserPlus, Video, ExternalLink, CalendarIcon, Clock } from "lucide-react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -316,25 +321,17 @@ function NewAppointmentDialog({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Début *</Label>
-                <Input
-                  type="datetime-local"
+                <DateTimePicker
                   value={form.start_at}
-                  onChange={(e) => {
-                    setForm({ ...form, start_at: e.target.value, end_at: "" });
-                  }}
+                  onChange={(v) => setForm({ ...form, start_at: v, end_at: "" })}
                   required
-                  className={isWeekendDate(form.start_at) ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
-                {isWeekendDate(form.start_at) && (
-                  <p className="text-xs text-destructive font-medium">Vendredi, samedi et dimanche non disponibles.</p>
-                )}
               </div>
               <div className="space-y-1">
                 <Label>Fin</Label>
-                <Input
-                  type="datetime-local"
+                <DateTimePicker
                   value={form.end_at}
-                  onChange={(e) => setForm({ ...form, end_at: e.target.value })}
+                  onChange={(v) => setForm({ ...form, end_at: v })}
                 />
               </div>
             </div>
@@ -514,4 +511,111 @@ export default memo(NewAppointmentDialog);
 
 function Label({ children }: { children: React.ReactNode }) {
   return <label className="text-sm font-medium text-foreground">{children}</label>;
+}
+
+// ── DateTimePicker ──────────────────────────────────────────────────
+const BLOCKED_DOW = [0, 5, 6]; // dimanche, vendredi, samedi
+
+const TIME_SLOTS = Array.from({ length: (19 - 8) * 4 }, (_, i) => {
+  const totalMins = 8 * 60 + i * 15;
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(h)}:${pad(m)}`;
+});
+
+function DateTimePicker({
+  value,
+  onChange,
+  required,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const dateVal = value ? new Date(value) : undefined;
+  const timeVal = value ? value.slice(11, 16) : "09:00";
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+    const dateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    onChange(`${dateStr}T${timeVal}`);
+    setOpen(false);
+  };
+
+  const handleTimeChange = (time: string) => {
+    if (!dateVal) return;
+    const dateStr = `${dateVal.getFullYear()}-${pad(dateVal.getMonth() + 1)}-${pad(dateVal.getDate())}`;
+    onChange(`${dateStr}T${time}`);
+  };
+
+  const isBlockedDay = (date: Date) => BLOCKED_DOW.includes(date.getDay());
+
+  const past = new Date();
+  past.setHours(0, 0, 0, 0);
+
+  return (
+    <div className="flex gap-2">
+      {/* Date picker */}
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            className={cn(
+              "flex-1 justify-start text-left font-normal text-sm h-9",
+              !dateVal && "text-muted-foreground",
+              dateVal && isBlockedDay(dateVal) && "border-destructive text-destructive"
+            )}
+          >
+            <CalendarIcon className="mr-2 h-3.5 w-3.5 shrink-0 opacity-60" />
+            {dateVal
+              ? format(dateVal, "d MMM yyyy", { locale: fr })
+              : <span>Choisir une date</span>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0 z-[200]" align="start">
+          <Calendar
+            mode="single"
+            selected={dateVal}
+            onSelect={handleDateSelect}
+            disabled={(date) => isBlockedDay(date) || date < past}
+            initialFocus
+            locale={fr}
+            className="p-3 pointer-events-auto"
+          />
+          {dateVal && isBlockedDay(dateVal) && (
+            <p className="px-3 pb-3 text-xs text-destructive font-medium">
+              Vendredi, samedi et dimanche non disponibles.
+            </p>
+          )}
+        </PopoverContent>
+      </Popover>
+
+      {/* Time picker */}
+      <div className="relative">
+        <Clock className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+        <Select
+          value={timeVal}
+          onValueChange={handleTimeChange}
+          disabled={!dateVal}
+        >
+          <SelectTrigger className="w-[100px] pl-7 h-9 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="z-[200] max-h-60">
+            {TIME_SLOTS.map((t) => (
+              <SelectItem key={t} value={t} className="text-sm">
+                {t}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
 }
