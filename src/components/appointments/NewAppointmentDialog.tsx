@@ -85,9 +85,21 @@ function NewAppointmentDialog({
     setLeads(data ?? []);
   };
 
+  const isWeekendDate = (dateStr: string) => {
+    if (!dateStr) return false;
+    const dow = new Date(dateStr).getDay();
+    return dow === 0 || dow === 5 || dow === 6;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    if (isWeekendDate(form.start_at)) {
+      toast.error("Les rendez-vous ne sont pas disponibles le vendredi, samedi et dimanche.");
+      return;
+    }
+
     setLoading(true);
 
     let leadId = form.lead_id || null;
