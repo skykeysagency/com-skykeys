@@ -498,8 +498,20 @@ export default function CalendarPage() {
     return toDatetimeLocal(d);
   };
 
+  // 5 = vendredi, 6 = samedi, 0 = dimanche
+  const isWeekend = (day: Date) => {
+    const dow = day.getDay();
+    return dow === 0 || dow === 5 || dow === 6;
+  };
+
   const handleSlotClick = useCallback((e: React.MouseEvent<HTMLDivElement>, day: Date) => {
     if ((e.target as HTMLElement).closest("[data-apt]")) return;
+
+    if (isWeekend(day)) {
+      toast.info("Les rendez-vous ne sont pas disponibles le vendredi, samedi et dimanche.");
+      return;
+    }
+
     const rect = e.currentTarget.getBoundingClientRect();
     const y = e.clientY - rect.top;
     const clickedDatetime = yToDatetime(y, day);
