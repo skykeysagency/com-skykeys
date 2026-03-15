@@ -76,8 +76,16 @@ export default function Settings() {
     if (!user) return;
     setSaving(true);
     const { error } = await supabase.from("profiles").update(form).eq("user_id", user.id);
-    if (error) toast.error("Erreur lors de la sauvegarde");
-    else toast.success("Paramètres sauvegardés !");
+    if (error) {
+      toast.error("Erreur lors de la sauvegarde");
+      setSaving(false);
+      return;
+    }
+    // Sync first_name / last_name into auth user_metadata so the sidebar reflects the change immediately
+    await supabase.auth.updateUser({
+      data: { first_name: form.first_name, last_name: form.last_name },
+    });
+    toast.success("Paramètres sauvegardés !");
     setSaving(false);
   };
 
