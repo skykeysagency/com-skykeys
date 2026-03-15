@@ -147,12 +147,14 @@ function TimeGrid({ cols, scrollRef, appointments, busySlots, nowMinute, onSlotC
           {cols.map((day, colIdx) => {
             const dayApts = aptsForDay(day);
             const layout = layoutApts(dayApts);
+            const dow = day.getDay();
+            const isWkndCol = dow === 0 || dow === 5 || dow === 6;
             return (
               <div
                 key={colIdx}
-                className={`flex-1 relative border-r border-border last:border-r-0 ${isToday(day) ? "bg-primary/[0.018]" : ""}`}
+                className={`flex-1 relative border-r border-border last:border-r-0 ${isToday(day) ? "bg-primary/[0.018]" : ""} ${isWkndCol ? "bg-muted/30" : ""}`}
                 onClick={(e) => onSlotClick(e, day)}
-                style={{ cursor: "crosshair" }}
+                style={{ cursor: isWkndCol ? "not-allowed" : "crosshair" }}
               >
                 {/* Hour lines */}
                 {hours.map((h) => (
