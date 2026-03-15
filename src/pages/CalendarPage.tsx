@@ -103,26 +103,33 @@ function TimeGrid({ cols, scrollRef, appointments, busySlots, nowMinute, onSlotC
       {/* Column headers */}
       <div className="flex shrink-0 border-b border-border bg-card/80">
         <div className="w-16 shrink-0 border-r border-border" />
-        {cols.map((day, i) => (
-          <div
-            key={i}
-            onClick={() => { if (!isDay) onDayClick(day); }}
-            className={`flex-1 py-3 text-center border-r border-border last:border-r-0 transition-colors
-              ${!isDay ? "cursor-pointer hover:bg-muted/40" : ""}
-              ${isToday(day) ? "bg-primary/5" : ""}
-            `}
-          >
-            <p className={`text-[10px] uppercase font-bold tracking-widest ${isToday(day) ? "text-primary" : "text-muted-foreground"}`}>
-              {format(day, "EEE", { locale: fr })}
-            </p>
-            <div className={`mx-auto mt-1.5 w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold transition-all
-              ${isToday(day)
-                ? "gradient-primary text-primary-foreground shadow-primary"
-                : "text-foreground hover:bg-muted"}`}>
-              {format(day, "d")}
+        {cols.map((day, i) => {
+          const dow = day.getDay();
+          const isWkndHeader = dow === 0 || dow === 5 || dow === 6;
+          return (
+            <div
+              key={i}
+              onClick={() => { if (!isDay && !isWkndHeader) onDayClick(day); }}
+              className={`flex-1 py-3 text-center border-r border-border last:border-r-0 transition-colors
+                ${!isDay && !isWkndHeader ? "cursor-pointer hover:bg-muted/40" : ""}
+                ${isWkndHeader ? "bg-muted/30 cursor-not-allowed" : ""}
+                ${isToday(day) ? "bg-primary/5" : ""}
+              `}
+            >
+              <p className={`text-[10px] uppercase font-bold tracking-widest ${isToday(day) ? "text-primary" : isWkndHeader ? "text-muted-foreground/40" : "text-muted-foreground"}`}>
+                {format(day, "EEE", { locale: fr })}
+              </p>
+              <div className={`mx-auto mt-1.5 w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold transition-all
+                ${isToday(day)
+                  ? "gradient-primary text-primary-foreground shadow-primary"
+                  : isWkndHeader
+                  ? "text-muted-foreground/40"
+                  : "text-foreground hover:bg-muted"}`}>
+                {format(day, "d")}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Scrollable time body */}
