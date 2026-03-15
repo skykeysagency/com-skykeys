@@ -321,25 +321,17 @@ function NewAppointmentDialog({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Début *</Label>
-                <Input
-                  type="datetime-local"
+                <DateTimePicker
                   value={form.start_at}
-                  onChange={(e) => {
-                    setForm({ ...form, start_at: e.target.value, end_at: "" });
-                  }}
+                  onChange={(v) => setForm({ ...form, start_at: v, end_at: "" })}
                   required
-                  className={isWeekendDate(form.start_at) ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
-                {isWeekendDate(form.start_at) && (
-                  <p className="text-xs text-destructive font-medium">Vendredi, samedi et dimanche non disponibles.</p>
-                )}
               </div>
               <div className="space-y-1">
                 <Label>Fin</Label>
-                <Input
-                  type="datetime-local"
+                <DateTimePicker
                   value={form.end_at}
-                  onChange={(e) => setForm({ ...form, end_at: e.target.value })}
+                  onChange={(v) => setForm({ ...form, end_at: v })}
                 />
               </div>
             </div>
