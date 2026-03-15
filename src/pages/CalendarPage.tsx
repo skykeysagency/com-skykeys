@@ -289,13 +289,15 @@ function MonthView({ days, currentDate, appointments, onDayClick, onAptClick }: 
         {days.map((day, idx) => {
           const dayApts = aptsForDay(day);
           const isCurrentMonth = isSameMonth(day, currentDate);
-          const isWknd = idx % 7 >= 5;
+          const dow = day.getDay();
+          const isWknd = dow === 0 || dow === 5 || dow === 6;
           return (
             <div
               key={idx}
-              onClick={() => onDayClick(day)}
-              className={`border-b border-r border-border p-1.5 cursor-pointer transition-colors hover:bg-accent/30 group
-                ${!isCurrentMonth ? "bg-muted/10" : isWknd ? "bg-muted/5" : ""}
+              onClick={() => { if (!isWknd) onDayClick(day); }}
+              className={`border-b border-r border-border p-1.5 transition-colors group
+                ${isWknd ? "bg-muted/25 cursor-not-allowed" : "cursor-pointer hover:bg-accent/30"}
+                ${!isCurrentMonth && !isWknd ? "bg-muted/10" : ""}
                 ${idx % 7 === 6 ? "border-r-0" : ""}
                 ${isToday(day) ? "bg-primary/[0.04]" : ""}
               `}
