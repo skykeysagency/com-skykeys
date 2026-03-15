@@ -103,26 +103,33 @@ function TimeGrid({ cols, scrollRef, appointments, busySlots, nowMinute, onSlotC
       {/* Column headers */}
       <div className="flex shrink-0 border-b border-border bg-card/80">
         <div className="w-16 shrink-0 border-r border-border" />
-        {cols.map((day, i) => (
-          <div
-            key={i}
-            onClick={() => { if (!isDay) onDayClick(day); }}
-            className={`flex-1 py-3 text-center border-r border-border last:border-r-0 transition-colors
-              ${!isDay ? "cursor-pointer hover:bg-muted/40" : ""}
-              ${isToday(day) ? "bg-primary/5" : ""}
-            `}
-          >
-            <p className={`text-[10px] uppercase font-bold tracking-widest ${isToday(day) ? "text-primary" : "text-muted-foreground"}`}>
-              {format(day, "EEE", { locale: fr })}
-            </p>
-            <div className={`mx-auto mt-1.5 w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold transition-all
-              ${isToday(day)
-                ? "gradient-primary text-primary-foreground shadow-primary"
-                : "text-foreground hover:bg-muted"}`}>
-              {format(day, "d")}
+        {cols.map((day, i) => {
+          const dow = day.getDay();
+          const isWkndHeader = dow === 0 || dow === 5 || dow === 6;
+          return (
+            <div
+              key={i}
+              onClick={() => { if (!isDay && !isWkndHeader) onDayClick(day); }}
+              className={`flex-1 py-3 text-center border-r border-border last:border-r-0 transition-colors
+                ${!isDay && !isWkndHeader ? "cursor-pointer hover:bg-muted/40" : ""}
+                ${isWkndHeader ? "bg-muted/30 cursor-not-allowed" : ""}
+                ${isToday(day) ? "bg-primary/5" : ""}
+              `}
+            >
+              <p className={`text-[10px] uppercase font-bold tracking-widest ${isToday(day) ? "text-primary" : isWkndHeader ? "text-muted-foreground/40" : "text-muted-foreground"}`}>
+                {format(day, "EEE", { locale: fr })}
+              </p>
+              <div className={`mx-auto mt-1.5 w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold transition-all
+                ${isToday(day)
+                  ? "gradient-primary text-primary-foreground shadow-primary"
+                  : isWkndHeader
+                  ? "text-muted-foreground/40"
+                  : "text-foreground hover:bg-muted"}`}>
+                {format(day, "d")}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Scrollable time body */}
@@ -147,12 +154,14 @@ function TimeGrid({ cols, scrollRef, appointments, busySlots, nowMinute, onSlotC
           {cols.map((day, colIdx) => {
             const dayApts = aptsForDay(day);
             const layout = layoutApts(dayApts);
+            const dow = day.getDay();
+            const isWkndCol = dow === 0 || dow === 5 || dow === 6;
             return (
               <div
                 key={colIdx}
-                className={`flex-1 relative border-r border-border last:border-r-0 ${isToday(day) ? "bg-primary/[0.018]" : ""}`}
+                className={`flex-1 relative border-r border-border last:border-r-0 ${isToday(day) ? "bg-primary/[0.018]" : ""} ${isWkndCol ? "bg-muted/30" : ""}`}
                 onClick={(e) => onSlotClick(e, day)}
-                style={{ cursor: "crosshair" }}
+                style={{ cursor: isWkndCol ? "not-allowed" : "crosshair" }}
               >
                 {/* Hour lines */}
                 {hours.map((h) => (
@@ -280,13 +289,15 @@ function MonthView({ days, currentDate, appointments, onDayClick, onAptClick }: 
         {days.map((day, idx) => {
           const dayApts = aptsForDay(day);
           const isCurrentMonth = isSameMonth(day, currentDate);
-          const isWknd = idx % 7 >= 5;
+          const dow = day.getDay();
+          const isWknd = dow === 0 || dow === 5 || dow === 6;
           return (
             <div
               key={idx}
-              onClick={() => onDayClick(day)}
-              className={`border-b border-r border-border p-1.5 cursor-pointer transition-colors hover:bg-accent/30 group
-                ${!isCurrentMonth ? "bg-muted/10" : isWknd ? "bg-muted/5" : ""}
+              onClick={() => { if (!isWknd) onDayClick(day); }}
+              className={`border-b border-r border-border p-1.5 transition-colors group
+                ${isWknd ? "bg-muted/25 cursor-not-allowed" : "cursor-pointer hover:bg-accent/30"}
+                ${!isCurrentMonth && !isWknd ? "bg-muted/10" : ""}
                 ${idx % 7 === 6 ? "border-r-0" : ""}
                 ${isToday(day) ? "bg-primary/[0.04]" : ""}
               `}
@@ -498,8 +509,20 @@ export default function CalendarPage() {
     return toDatetimeLocal(d);
   };
 
+  // 5 = vendredi, 6 = samedi, 0 = dimanche
+  const isWeekend = (day: Date) => {
+    const dow = day.getDay();
+    return dow === 0 || dow === 5 || dow === 6;
+  };
+
   const handleSlotClick = useCallback((e: React.MouseEvent<HTMLDivElement>, day: Date) => {
     if ((e.target as HTMLElement).closest("[data-apt]")) return;
+
+    if (isWeekend(day)) {
+      toast.info("Les rendez-vous ne sont pas disponibles le vendredi, samedi et dimanche.");
+      return;
+    }
+
     const rect = e.currentTarget.getBoundingClientRect();
     const y = e.clientY - rect.top;
     const clickedDatetime = yToDatetime(y, day);
