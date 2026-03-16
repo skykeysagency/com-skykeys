@@ -17,9 +17,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
-  ShieldCheck, Users, CalendarDays, Plus, Pencil, Trash2,
-  Loader2, Search, Building2, Phone, Mail,
+  ShieldCheck, Users, CalendarDays, Phone, Plus, Pencil, Trash2,
+  Loader2, Search, Building2, Mail,
   Clock, MapPin, User, ExternalLink, UserPlus, Lock, Layers,
+  PhoneCall, PhoneOff, PhoneMissed,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -53,6 +54,14 @@ function toDatetimeLocal(iso: string) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function formatDuration(seconds: number | null) {
+  if (!seconds) return "—";
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  if (m === 0) return `${s}s`;
+  return `${m}m ${s}s`;
+}
+
 // ── Field component ────────────────────────────────────
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -70,6 +79,22 @@ function StatusBadge({ status }: { status: LeadStatus }) {
   return <Badge variant="outline" className={`text-[11px] font-semibold px-2 py-0.5 ${opt.class}`}>{opt.label}</Badge>;
 }
 
+// ── Commercial display ─────────────────────────────────
+function CommercialCell({ userId, profiles }: { userId: string; profiles: any[] }) {
+  const p = profiles.find((x) => x.user_id === userId);
+  if (!p) return <span className="text-xs text-muted-foreground/50">—</span>;
+  const name = `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || p.email || "Inconnu";
+  const initials = `${p.first_name?.[0] ?? ""}${p.last_name?.[0] ?? ""}`.toUpperCase() || p.email?.[0]?.toUpperCase() || "?";
+  return (
+    <div className="flex items-center gap-2">
+      <div className="w-6 h-6 rounded-md gradient-primary flex items-center justify-center text-primary-foreground text-[10px] font-bold shrink-0">
+        {initials}
+      </div>
+      <span className="text-xs font-medium text-foreground">{name}</span>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const { user } = useAuth();
   const { isManager, loadingRole } = useRole();
@@ -78,6 +103,7 @@ export default function AdminPage() {
   // ── Leads state ────────────────────────────────────
   const [leads, setLeads] = useState<any[]>([]);
   const [leadSearch, setLeadSearch] = useState("");
+  const [leadUserFilter, setLeadUserFilter] = useState("all");
   const [loadingLeads, setLoadingLeads] = useState(false);
   const [leadDialog, setLeadDialog] = useState<"create" | "edit" | null>(null);
   const [editingLead, setEditingLead] = useState<any | null>(null);
@@ -88,12 +114,19 @@ export default function AdminPage() {
   // ── Appointments state ─────────────────────────────
   const [appointments, setAppointments] = useState<any[]>([]);
   const [aptSearch, setAptSearch] = useState("");
+  const [aptUserFilter, setAptUserFilter] = useState("all");
   const [loadingApts, setLoadingApts] = useState(false);
   const [aptDialog, setAptDialog] = useState(false);
   const [editingApt, setEditingApt] = useState<any | null>(null);
   const [aptForm, setAptForm] = useState(EMPTY_APT);
   const [savingApt, setSavingApt] = useState(false);
   const [deletingAptId, setDeletingAptId] = useState<string | null>(null);
+
+  // ── Call logs state ────────────────────────────────
+  const [callLogs, setCallLogs] = useState<any[]>([]);
+  const [callSearch, setCallSearch] = useState("");
+  const [callUserFilter, setCallUserFilter] = useState("all");
+  const [loadingCalls, setLoadingCalls] = useState(false);
 
   // ── User creation state ────────────────────────────
   const EMPTY_USER_FORM = { email: "", password: "", first_name: "", last_name: "", role: "commercial" as "admin" | "manager" | "commercial" };
@@ -103,6 +136,7 @@ export default function AdminPage() {
 
   // ── Users list state ───────────────────────────────
   const [usersList, setUsersList] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [deletingUserLeadsId, setDeletingUserLeadsId] = useState<string | null>(null);
   const [deletingUserLeadsName, setDeletingUserLeadsName] = useState<string>("");
@@ -114,15 +148,13 @@ export default function AdminPage() {
   }, [loadingRole, isManager]);
 
   useEffect(() => {
-    if (isManager) { fetchLeads(); fetchAppointments(); fetchUsers(); }
+    if (isManager) { fetchLeads(); fetchAppointments(); fetchCallLogs(); fetchUsers(); }
   }, [isManager]);
 
   // ── Fetch ──────────────────────────────────────────
   const fetchLeads = async () => {
     setLoadingLeads(true);
-    const { data } = await supabase.from("leads")
-      .select("*")
-      .order("last_name");
+    const { data } = await supabase.from("leads").select("*").order("last_name");
     setLeads(data ?? []);
     setLoadingLeads(false);
   };
@@ -136,17 +168,22 @@ export default function AdminPage() {
     setLoadingApts(false);
   };
 
+  const fetchCallLogs = async () => {
+    setLoadingCalls(true);
+    const { data } = await supabase.from("call_logs")
+      .select("*, leads(first_name, last_name, company, phone)")
+      .order("called_at", { ascending: false });
+    setCallLogs(data ?? []);
+    setLoadingCalls(false);
+  };
+
   const fetchUsers = async () => {
     setLoadingUsers(true);
-    const { data: profiles } = await supabase
+    const { data: profilesData } = await supabase
       .from("profiles")
       .select("user_id, first_name, last_name, email");
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("user_id, role");
-    const { data: leadsData } = await supabase
-      .from("leads")
-      .select("user_id");
+    const { data: roles } = await supabase.from("user_roles").select("user_id, role");
+    const { data: leadsData } = await supabase.from("leads").select("user_id");
 
     const leadCountByUser: Record<string, number> = {};
     (leadsData ?? []).forEach((l: any) => {
@@ -156,11 +193,12 @@ export default function AdminPage() {
     const roleMap: Record<string, string> = {};
     (roles ?? []).forEach((r: any) => { roleMap[r.user_id] = r.role; });
 
-    const list = (profiles ?? []).map((p: any) => ({
+    const list = (profilesData ?? []).map((p: any) => ({
       ...p,
       role: roleMap[p.user_id] ?? "commercial",
       leads_count: leadCountByUser[p.user_id] ?? 0,
     }));
+    setProfiles(profilesData ?? []);
     setUsersList(list);
     setLoadingUsers(false);
   };
@@ -172,8 +210,7 @@ export default function AdminPage() {
     if (error) toast.error("Erreur lors de la suppression des leads");
     else {
       toast.success(`Tous les leads de ${deletingUserLeadsName} ont été supprimés`);
-      fetchLeads();
-      fetchUsers();
+      fetchLeads(); fetchUsers();
     }
     setDeletingUserLeadsId(null);
     setIsDeletingLeads(false);
@@ -253,7 +290,6 @@ export default function AdminPage() {
   const saveApt = async () => {
     if (!editingApt) return;
     setSavingApt(true);
-    // datetime-local = heure locale ; la BDD attend du UTC (timestamptz)
     const startAtUtc = new Date(aptForm.start_at).toISOString();
     const endAtUtc = new Date(aptForm.end_at || aptForm.start_at).toISOString();
     const payload = {
@@ -300,26 +336,79 @@ export default function AdminPage() {
     setSavingUser(false);
   };
 
-  // ── Filters ────────────────────────────────────────
+  // ── Helpers ────────────────────────────────────────
+  const commercialOptions = usersList.filter((u) => u.role === "commercial" || u.role === "manager");
+
   const filteredLeads = leads.filter((l) => {
     const q = leadSearch.toLowerCase();
-    return (
+    const matchSearch = (
       l.first_name?.toLowerCase().includes(q) ||
       l.last_name?.toLowerCase().includes(q) ||
       l.company?.toLowerCase().includes(q) ||
       l.email?.toLowerCase().includes(q)
     );
+    const matchUser = leadUserFilter === "all" || l.user_id === leadUserFilter;
+    return matchSearch && matchUser;
   });
 
   const filteredApts = appointments.filter((a) => {
     const q = aptSearch.toLowerCase();
-    return (
+    const matchSearch = (
       a.title?.toLowerCase().includes(q) ||
       a.leads?.first_name?.toLowerCase().includes(q) ||
       a.leads?.last_name?.toLowerCase().includes(q) ||
       a.location?.toLowerCase().includes(q)
     );
+    const matchUser = aptUserFilter === "all" || a.user_id === aptUserFilter;
+    return matchSearch && matchUser;
   });
+
+  const filteredCalls = callLogs.filter((c) => {
+    const q = callSearch.toLowerCase();
+    const matchSearch = (
+      c.leads?.first_name?.toLowerCase().includes(q) ||
+      c.leads?.last_name?.toLowerCase().includes(q) ||
+      c.leads?.company?.toLowerCase().includes(q) ||
+      c.leads?.phone?.toLowerCase().includes(q) ||
+      c.notes?.toLowerCase().includes(q)
+    );
+    const matchUser = callUserFilter === "all" || c.user_id === callUserFilter;
+    return matchSearch && matchUser;
+  });
+
+  const getCallStatusIcon = (status: string | null) => {
+    if (status === "completed") return <PhoneCall className="w-3.5 h-3.5 text-emerald-600" />;
+    if (status === "missed") return <PhoneMissed className="w-3.5 h-3.5 text-rose-500" />;
+    if (status === "failed") return <PhoneOff className="w-3.5 h-3.5 text-rose-500" />;
+    return <Phone className="w-3.5 h-3.5 text-muted-foreground" />;
+  };
+
+  const getCallStatusBadge = (status: string | null) => {
+    if (status === "completed") return <Badge variant="outline" className="text-[11px] font-semibold bg-emerald-50 text-emerald-700 border-emerald-200">Effectué</Badge>;
+    if (status === "missed") return <Badge variant="outline" className="text-[11px] font-semibold bg-rose-50 text-rose-700 border-rose-200">Manqué</Badge>;
+    if (status === "failed") return <Badge variant="outline" className="text-[11px] font-semibold bg-rose-50 text-rose-700 border-rose-200">Échoué</Badge>;
+    return <Badge variant="outline" className="text-[11px] font-semibold">{status ?? "—"}</Badge>;
+  };
+
+  // ── User filter select ─────────────────────────────
+  function UserFilterSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+    return (
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="h-9 text-sm w-[180px]">
+          <User className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
+          <SelectValue placeholder="Tous les commerciaux" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Tous les commerciaux</SelectItem>
+          {usersList.map((u) => (
+            <SelectItem key={u.user_id} value={u.user_id}>
+              {`${u.first_name ?? ""} ${u.last_name ?? ""}`.trim() || u.email}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  }
 
   if (loadingRole) {
     return (
@@ -339,7 +428,7 @@ export default function AdminPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-foreground tracking-tight">Administration</h1>
-            <p className="text-sm text-muted-foreground font-medium">Gestion complète des leads et rendez-vous</p>
+            <p className="text-sm text-muted-foreground font-medium">Vue complète de l'activité des commerciaux</p>
           </div>
         </div>
         <Badge variant="outline" className="gap-1.5 px-3 py-1.5 text-xs font-semibold border-primary/30 text-primary bg-primary/5">
@@ -360,6 +449,10 @@ export default function AdminPage() {
               <CalendarDays className="w-4 h-4" /> Rendez-vous
               <span className="ml-1 text-[11px] font-bold text-muted-foreground">({appointments.length})</span>
             </TabsTrigger>
+            <TabsTrigger value="calls" className="gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <Phone className="w-4 h-4" /> Appels
+              <span className="ml-1 text-[11px] font-bold text-muted-foreground">({callLogs.length})</span>
+            </TabsTrigger>
             <TabsTrigger value="users" className="gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
               <UserPlus className="w-4 h-4" /> Utilisateurs
             </TabsTrigger>
@@ -367,8 +460,8 @@ export default function AdminPage() {
 
           {/* ── LEADS TAB ── */}
           <TabsContent value="leads">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="relative flex-1 max-w-sm">
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
+              <div className="relative flex-1 min-w-[200px] max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Rechercher un lead…"
@@ -377,7 +470,8 @@ export default function AdminPage() {
                   onChange={(e) => setLeadSearch(e.target.value)}
                 />
               </div>
-              <Button size="sm" className="gap-1.5 shadow-primary text-xs font-semibold" onClick={openCreateLead}>
+              <UserFilterSelect value={leadUserFilter} onChange={setLeadUserFilter} />
+              <Button size="sm" className="gap-1.5 shadow-primary text-xs font-semibold ml-auto" onClick={openCreateLead}>
                 <Plus className="w-3.5 h-3.5" /> Créer un lead
               </Button>
             </div>
@@ -395,12 +489,13 @@ export default function AdminPage() {
                       <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Contact</th>
                       <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Entreprise</th>
                       <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Statut</th>
+                      <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden xl:table-cell">Commercial</th>
                       <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredLeads.length === 0 ? (
-                      <tr><td colSpan={5} className="text-center py-12 text-muted-foreground text-sm">Aucun lead trouvé</td></tr>
+                      <tr><td colSpan={6} className="text-center py-12 text-muted-foreground text-sm">Aucun lead trouvé</td></tr>
                     ) : filteredLeads.map((lead, i) => (
                       <tr
                         key={lead.id}
@@ -441,6 +536,9 @@ export default function AdminPage() {
                         <td className="px-4 py-3">
                           <StatusBadge status={lead.status} />
                         </td>
+                        <td className="px-4 py-3 hidden xl:table-cell">
+                          <CommercialCell userId={lead.user_id} profiles={profiles} />
+                        </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1 justify-end">
                             <Button
@@ -479,8 +577,8 @@ export default function AdminPage() {
 
           {/* ── APPOINTMENTS TAB ── */}
           <TabsContent value="appointments">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="relative flex-1 max-w-sm">
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
+              <div className="relative flex-1 min-w-[200px] max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Rechercher un rendez-vous…"
@@ -489,6 +587,7 @@ export default function AdminPage() {
                   onChange={(e) => setAptSearch(e.target.value)}
                 />
               </div>
+              <UserFilterSelect value={aptUserFilter} onChange={setAptUserFilter} />
             </div>
 
             {loadingApts ? (
@@ -504,12 +603,13 @@ export default function AdminPage() {
                       <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Date & Heure</th>
                       <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Prospect</th>
                       <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Lieu</th>
+                      <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden xl:table-cell">Commercial</th>
                       <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredApts.length === 0 ? (
-                      <tr><td colSpan={5} className="text-center py-12 text-muted-foreground text-sm">Aucun rendez-vous trouvé</td></tr>
+                      <tr><td colSpan={6} className="text-center py-12 text-muted-foreground text-sm">Aucun rendez-vous trouvé</td></tr>
                     ) : filteredApts.map((apt, i) => (
                       <tr
                         key={apt.id}
@@ -552,6 +652,9 @@ export default function AdminPage() {
                             <span className="text-xs text-muted-foreground/50">—</span>
                           )}
                         </td>
+                        <td className="px-4 py-3 hidden xl:table-cell">
+                          <CommercialCell userId={apt.user_id} profiles={profiles} />
+                        </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1 justify-end">
                             <Button
@@ -571,6 +674,104 @@ export default function AdminPage() {
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ── CALLS TAB ── */}
+          <TabsContent value="calls">
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
+              <div className="relative flex-1 min-w-[200px] max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher par prospect, société…"
+                  className="pl-9 h-9 text-sm"
+                  value={callSearch}
+                  onChange={(e) => setCallSearch(e.target.value)}
+                />
+              </div>
+              <UserFilterSelect value={callUserFilter} onChange={setCallUserFilter} />
+            </div>
+
+            {loadingCalls ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="border border-border rounded-xl overflow-hidden bg-card shadow-card">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/30">
+                      <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Prospect</th>
+                      <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Date</th>
+                      <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Statut</th>
+                      <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Durée</th>
+                      <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Notes</th>
+                      <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden xl:table-cell">Commercial</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCalls.length === 0 ? (
+                      <tr><td colSpan={6} className="text-center py-12 text-muted-foreground text-sm">Aucun appel trouvé</td></tr>
+                    ) : filteredCalls.map((call, i) => (
+                      <tr
+                        key={call.id}
+                        className={`border-b border-border/50 last:border-b-0 hover:bg-muted/20 transition-colors ${i % 2 === 0 ? "" : "bg-muted/5"}`}
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                              {getCallStatusIcon(call.status)}
+                            </div>
+                            <div>
+                              {call.leads ? (
+                                <>
+                                  <p className="font-semibold text-foreground text-sm">
+                                    {call.leads.first_name} {call.leads.last_name}
+                                  </p>
+                                  {call.leads.company && (
+                                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                                      <Building2 className="w-3 h-3" /> {call.leads.company}
+                                    </p>
+                                  )}
+                                </>
+                              ) : (
+                                <p className="text-xs text-muted-foreground italic">Lead supprimé</p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 hidden md:table-cell">
+                          <p className="text-xs font-medium text-foreground">
+                            {format(parseISO(call.called_at), "d MMM yyyy", { locale: fr })}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {format(parseISO(call.called_at), "HH:mm")}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3">
+                          {getCallStatusBadge(call.status)}
+                        </td>
+                        <td className="px-4 py-3 hidden md:table-cell">
+                          <span className="flex items-center gap-1 text-xs font-medium text-foreground">
+                            <Clock className="w-3 h-3 text-muted-foreground" />
+                            {formatDuration(call.duration_seconds)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 hidden lg:table-cell max-w-[200px]">
+                          {call.notes ? (
+                            <p className="text-xs text-muted-foreground truncate">{call.notes}</p>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/50">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 hidden xl:table-cell">
+                          <CommercialCell userId={call.user_id} profiles={profiles} />
                         </td>
                       </tr>
                     ))}
