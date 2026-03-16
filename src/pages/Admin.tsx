@@ -22,7 +22,7 @@ import {
   Clock, MapPin, User, ExternalLink, UserPlus, Lock, Layers,
   PhoneCall, PhoneOff, PhoneMissed,
 } from "lucide-react";
-import { format, parseISO, formatDistanceToNow } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 
 // ── Types ─────────────────────────────────────────────
