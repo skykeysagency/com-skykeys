@@ -202,7 +202,7 @@ export default function Leads() {
   );
 }
 
-function LeadsTable({ leads, onSort, SortIcon, onRefresh }: any) {
+function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore }: any) {
   if (leads.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center bg-card border border-border rounded-2xl">
