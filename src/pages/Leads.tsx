@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,8 +34,25 @@ export default function Leads() {
   const [showNewLead, setShowNewLead] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [callModeLeads, setCallModeLeads] = useState<any[] | null>(null);
+  const [visibleCount, setVisibleCount] = useState(30);
+  const loaderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { fetchLeads(); }, [user]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const el = loaderRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) setVisibleCount((c) => c + 30); },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [filtered]);
+
+  // Reset visible count on filter change
+  useEffect(() => { setVisibleCount(30); }, [search, statusFilter]);
 
   useEffect(() => {
     let data = [...leads];
@@ -47,6 +64,10 @@ export default function Leads() {
     }
     if (statusFilter !== "all") data = data.filter((l) => l.status === statusFilter);
     data.sort((a, b) => {
+      // Leads sans entreprise toujours en fin
+      const aHasCompany = !!(a.company && a.company.trim());
+      const bHasCompany = !!(b.company && b.company.trim());
+      if (aHasCompany !== bHasCompany) return aHasCompany ? -1 : 1;
       const aVal = a[sortField] ?? "";
       const bVal = b[sortField] ?? "";
       return sortDir === "asc" ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
@@ -166,7 +187,7 @@ export default function Leads() {
           </div>
         </div>
       ) : view === "list" ? (
-        <LeadsTable leads={filtered} onSort={handleSort} SortIcon={SortIcon} onRefresh={fetchLeads} />
+        <LeadsTable leads={filtered.slice(0, visibleCount)} onSort={handleSort} SortIcon={SortIcon} onRefresh={fetchLeads} loaderRef={loaderRef} hasMore={visibleCount < filtered.length} />
       ) : (
         <LeadsKanban leads={filtered} onRefresh={fetchLeads} />
       )}
@@ -181,7 +202,7 @@ export default function Leads() {
   );
 }
 
-function LeadsTable({ leads, onSort, SortIcon, onRefresh }: any) {
+function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore }: any) {
   if (leads.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center bg-card border border-border rounded-2xl">
@@ -259,6 +280,11 @@ function LeadsTable({ leads, onSort, SortIcon, onRefresh }: any) {
           ))}
         </TableBody>
       </Table>
+      {hasMore && (
+        <div ref={loaderRef} className="flex justify-center py-4">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
     </div>
   );
 }
