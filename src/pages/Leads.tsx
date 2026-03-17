@@ -280,6 +280,11 @@ function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore }: 
           ))}
         </TableBody>
       </Table>
+      {hasMore && (
+        <div ref={loaderRef} className="flex justify-center py-4">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
     </div>
   );
 }
