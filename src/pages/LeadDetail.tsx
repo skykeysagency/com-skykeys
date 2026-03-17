@@ -7,17 +7,38 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { StatusBadge, LEAD_STATUSES } from "@/lib/leadStatus";
 import { toast } from "sonner";
 import { useRole } from "@/hooks/useRole";
 import {
   ArrowLeft, Phone, Mail, Globe, Building, User, Loader2,
-  PhoneCall, MessageSquare, Calendar, Clock, Send, Edit3, Check, X,
+  PhoneCall, PhoneMissed, PhoneOff, MessageSquare, Calendar, Clock, Send, Edit3, Check, X,
   MapPin, Tag, UserCheck,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import NewAppointmentDialog from "@/components/appointments/NewAppointmentDialog";
+
+function getCallStatusBadge(status: string | null) {
+  if (status === "completed") return <Badge variant="outline" className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 border-emerald-200 px-1.5 py-0">Effectué</Badge>;
+  if (status === "missed")    return <Badge variant="outline" className="text-[10px] font-semibold bg-rose-50 text-rose-700 border-rose-200 px-1.5 py-0">Manqué</Badge>;
+  if (status === "failed")    return <Badge variant="outline" className="text-[10px] font-semibold bg-rose-50 text-rose-700 border-rose-200 px-1.5 py-0">Échoué</Badge>;
+  if (status === "voicemail") return <Badge variant="outline" className="text-[10px] font-semibold bg-amber-50 text-amber-700 border-amber-200 px-1.5 py-0">Messagerie</Badge>;
+  return <Badge variant="outline" className="text-[10px] font-semibold px-1.5 py-0">{status ?? "—"}</Badge>;
+}
+
+function getCallIcon(status: string | null) {
+  if (status === "missed" || status === "failed") return <PhoneMissed className="w-3.5 h-3.5 text-rose-500" />;
+  if (status === "voicemail") return <PhoneOff className="w-3.5 h-3.5 text-amber-500" />;
+  return <PhoneCall className="w-3.5 h-3.5 text-green-600" />;
+}
+
+function getCallDotClass(status: string | null) {
+  if (status === "missed" || status === "failed") return "bg-rose-100";
+  if (status === "voicemail") return "bg-amber-100";
+  return "bg-green-100";
+}
 
 export default function LeadDetail() {
   const { id } = useParams();
@@ -28,7 +49,8 @@ export default function LeadDetail() {
   const [activities, setActivities] = useState<any[]>([]);
   const [calls, setCalls] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingLead, setLoadingLead] = useState(true);
+  const [loadingDetails, setLoadingDetails] = useState(true);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
@@ -41,7 +63,10 @@ export default function LeadDetail() {
   const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
-    if (id) { fetchAll(); fetchProfile(); }
+    if (id) {
+      fetchLead();
+      fetchProfile();
+    }
   }, [id]);
 
   const fetchProfile = async () => {
@@ -50,8 +75,31 @@ export default function LeadDetail() {
     setProfile(data);
   };
 
+  // Load lead first (fast) → then details in background
+  const fetchLead = async () => {
+    setLoadingLead(true);
+    const { data } = await supabase.from("leads").select("*").eq("id", id!).single();
+    setLead(data);
+    setEditForm(data ?? {});
+    setLoadingLead(false);
+    // Now fetch secondary data in background
+    fetchDetails();
+  };
+
+  const fetchDetails = async () => {
+    setLoadingDetails(true);
+    const [actRes, callRes, apptRes] = await Promise.all([
+      supabase.from("activity_logs").select("*").eq("lead_id", id!).order("created_at", { ascending: false }),
+      supabase.from("call_logs").select("*").eq("lead_id", id!).order("called_at", { ascending: false }),
+      supabase.from("appointments").select("*").eq("lead_id", id!).order("start_at", { ascending: false }),
+    ]);
+    setActivities(actRes.data ?? []);
+    setCalls(callRes.data ?? []);
+    setAppointments(apptRes.data ?? []);
+    setLoadingDetails(false);
+  };
+
   const fetchAll = async () => {
-    setLoading(true);
     const [leadRes, actRes, callRes, apptRes] = await Promise.all([
       supabase.from("leads").select("*").eq("id", id!).single(),
       supabase.from("activity_logs").select("*").eq("lead_id", id!).order("created_at", { ascending: false }),
@@ -63,7 +111,6 @@ export default function LeadDetail() {
     setActivities(actRes.data ?? []);
     setCalls(callRes.data ?? []);
     setAppointments(apptRes.data ?? []);
-    setLoading(false);
   };
 
   const handleSave = async () => {
@@ -84,6 +131,7 @@ export default function LeadDetail() {
           user_id: user!.id, lead_id: lead.id, type: "statut",
           content: `Statut changé : ${lead.status} → ${status}`
         });
+        await fetchDetails();
       }
     }
     setSaving(false);
@@ -92,13 +140,20 @@ export default function LeadDetail() {
   const handleAddNote = async () => {
     if (!note.trim() || !user || !lead) return;
     setAddingNote(true);
-    await supabase.from("activity_logs").insert({
-      user_id: user.id, lead_id: lead.id, type: "note", content: note
+    const { error } = await supabase.from("activity_logs").insert({
+      user_id: user.id,
+      lead_id: lead.id,
+      type: "note" as const,
+      content: note.trim(),
     });
-    setNote("");
-    await fetchAll();
+    if (error) {
+      toast.error("Impossible d'ajouter la note : " + error.message);
+    } else {
+      setNote("");
+      await fetchDetails();
+      toast.success("Note ajoutée !");
+    }
     setAddingNote(false);
-    toast.success("Note ajoutée !");
   };
 
   const handleCall = async () => {
@@ -128,15 +183,15 @@ export default function LeadDetail() {
   const handleSaveCallLog = async () => {
     if (!user || !lead) return;
     await supabase.from("call_logs").insert({
-      user_id: user.id, lead_id: lead.id, notes: callNote, status: "completed"
+      user_id: user.id, lead_id: lead.id, notes: callNote || null, status: "completed"
     });
     await supabase.from("activity_logs").insert({
-      user_id: user.id, lead_id: lead.id, type: "appel",
+      user_id: user.id, lead_id: lead.id, type: "appel" as const,
       content: callNote ? `Appel — ${callNote}` : "Appel passé"
     });
     setCallNote("");
     setShowCallNote(false);
-    await fetchAll();
+    await fetchDetails();
     toast.success("Appel enregistré !");
   };
 
@@ -158,7 +213,7 @@ export default function LeadDetail() {
     return map[type] ?? "bg-muted";
   };
 
-  if (loading) return (
+  if (loadingLead) return (
     <div className="flex items-center justify-center h-full py-24">
       <div className="flex flex-col items-center gap-3">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -329,90 +384,101 @@ export default function LeadDetail() {
           </Card>
 
           {/* Appointments */}
-          {appointments.length > 0 && (
-            <Card className="border-border shadow-card">
-              <CardHeader className="pb-3 border-b border-border">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-purple-600" />
-                  Rendez-vous
-                  <span className="ml-auto text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{appointments.length}</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 space-y-2">
-                {appointments.map((apt) => (
-                  <div key={apt.id} className="flex items-start gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors border border-border/50">
-                    <div className="min-w-[48px] text-center bg-background rounded-lg px-1.5 py-1.5 border border-border">
-                      <p className="text-xs font-bold text-primary leading-tight">{format(new Date(apt.start_at), "d MMM", { locale: fr })}</p>
-                      <p className="text-xs text-muted-foreground">{format(new Date(apt.start_at), "HH:mm")}</p>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{apt.title}</p>
-                      {apt.location && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <MapPin className="w-3 h-3" /> {apt.location}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+          {loadingDetails ? (
+            <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Chargement des activités…
+            </div>
+          ) : (
+            <>
+              {appointments.length > 0 && (
+                <Card className="border-border shadow-card">
+                  <CardHeader className="pb-3 border-b border-border">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-purple-600" />
+                      Rendez-vous
+                      <span className="ml-auto text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{appointments.length}</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-2">
+                    {appointments.map((apt) => (
+                      <div key={apt.id} className="flex items-start gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors border border-border/50">
+                        <div className="min-w-[48px] text-center bg-background rounded-lg px-1.5 py-1.5 border border-border">
+                          <p className="text-xs font-bold text-primary leading-tight">{format(new Date(apt.start_at), "d MMM", { locale: fr })}</p>
+                          <p className="text-xs text-muted-foreground">{format(new Date(apt.start_at), "HH:mm")}</p>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground">{apt.title}</p>
+                          {apt.location && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                              <MapPin className="w-3 h-3" /> {apt.location}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
 
-          {/* ── Convertir en client (admin only) ── */}
-          {isAdmin && (
-            <Card className="border-emerald-200 bg-emerald-50/50 shadow-card">
-              <CardContent className="p-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
-                    <UserCheck className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-emerald-900">Convertir en client</p>
-                    <p className="text-xs text-emerald-700/70">Envoie les données de ce lead vers votre CRM externe.</p>
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm shrink-0"
-                  onClick={() => {/* action à connecter */}}
-                >
-                  <UserCheck className="w-3.5 h-3.5" />
-                  Convertir
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+              {/* ── Convertir en client (admin only) ── */}
+              {isAdmin && (
+                <Card className="border-emerald-200 bg-emerald-50/50 shadow-card">
+                  <CardContent className="p-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+                        <UserCheck className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-emerald-900">Convertir en client</p>
+                        <p className="text-xs text-emerald-700/70">Envoie les données de ce lead vers votre CRM externe.</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm shrink-0"
+                      onClick={() => {}}
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      Convertir
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
 
-          {/* Call logs */}
-          {calls.length > 0 && (
-            <Card className="border-border shadow-card">
-              <CardHeader className="pb-3 border-b border-border">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-green-600" />
-                  Appels
-                  <span className="ml-auto text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{calls.length}</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 space-y-2">
-                {calls.map((call) => (
-                  <div key={call.id} className="flex items-start gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors border border-border/50">
-                    <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
-                      <PhoneCall className="w-3.5 h-3.5 text-green-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-foreground">{format(new Date(call.called_at), "d MMM yyyy · HH:mm", { locale: fr })}</p>
-                      {call.duration_seconds > 0 && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <Clock className="w-3 h-3" /> {Math.floor(call.duration_seconds / 60)}min {call.duration_seconds % 60}s
-                        </p>
-                      )}
-                      {call.notes && <p className="text-xs text-muted-foreground mt-0.5 truncate">{call.notes}</p>}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+              {/* Call logs */}
+              {calls.length > 0 && (
+                <Card className="border-border shadow-card">
+                  <CardHeader className="pb-3 border-b border-border">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-green-600" />
+                      Appels
+                      <span className="ml-auto text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{calls.length}</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-2">
+                    {calls.map((call) => (
+                      <div key={call.id} className="flex items-start gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors border border-border/50">
+                        <div className={`w-8 h-8 rounded-lg ${getCallDotClass(call.status)} flex items-center justify-center shrink-0`}>
+                          {getCallIcon(call.status)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-xs font-medium text-foreground">{format(new Date(call.called_at), "d MMM yyyy · HH:mm", { locale: fr })}</p>
+                            {getCallStatusBadge(call.status)}
+                          </div>
+                          {call.duration_seconds > 0 && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                              <Clock className="w-3 h-3" /> {Math.floor(call.duration_seconds / 60)}min {call.duration_seconds % 60}s
+                            </p>
+                          )}
+                          {call.notes && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{call.notes}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
         </div>
 
@@ -432,6 +498,9 @@ export default function LeadDetail() {
                   rows={2}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleAddNote();
+                  }}
                   className="text-sm resize-none"
                 />
                 <Button
@@ -446,8 +515,12 @@ export default function LeadDetail() {
               </div>
 
               {/* Timeline */}
-              <div className="space-y-3">
-                {activities.length === 0 ? (
+              <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+                {loadingDetails ? (
+                  <div className="flex items-center justify-center py-6 gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Chargement…
+                  </div>
+                ) : activities.length === 0 ? (
                   <div className="text-center py-6">
                     <MessageSquare className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
                     <p className="text-xs text-muted-foreground">Aucune activité</p>
