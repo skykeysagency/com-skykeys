@@ -34,8 +34,25 @@ export default function Leads() {
   const [showNewLead, setShowNewLead] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [callModeLeads, setCallModeLeads] = useState<any[] | null>(null);
+  const [visibleCount, setVisibleCount] = useState(30);
+  const loaderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { fetchLeads(); }, [user]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const el = loaderRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) setVisibleCount((c) => c + 30); },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [filtered]);
+
+  // Reset visible count on filter change
+  useEffect(() => { setVisibleCount(30); }, [search, statusFilter]);
 
   useEffect(() => {
     let data = [...leads];
@@ -47,6 +64,10 @@ export default function Leads() {
     }
     if (statusFilter !== "all") data = data.filter((l) => l.status === statusFilter);
     data.sort((a, b) => {
+      // Leads sans entreprise toujours en fin
+      const aHasCompany = !!(a.company && a.company.trim());
+      const bHasCompany = !!(b.company && b.company.trim());
+      if (aHasCompany !== bHasCompany) return aHasCompany ? -1 : 1;
       const aVal = a[sortField] ?? "";
       const bVal = b[sortField] ?? "";
       return sortDir === "asc" ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
