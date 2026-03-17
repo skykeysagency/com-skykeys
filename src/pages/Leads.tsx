@@ -187,7 +187,7 @@ export default function Leads() {
           </div>
         </div>
       ) : view === "list" ? (
-        <LeadsTable leads={filtered} onSort={handleSort} SortIcon={SortIcon} onRefresh={fetchLeads} />
+        <LeadsTable leads={filtered.slice(0, visibleCount)} onSort={handleSort} SortIcon={SortIcon} onRefresh={fetchLeads} loaderRef={loaderRef} hasMore={visibleCount < filtered.length} />
       ) : (
         <LeadsKanban leads={filtered} onRefresh={fetchLeads} />
       )}
