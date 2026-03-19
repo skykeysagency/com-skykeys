@@ -327,6 +327,12 @@ export default function Leads() {
           allVisibleSelected={allVisibleSelected}
           showCallNote={tab === "contacted"}
           callLogs={callLogs}
+          onCallLead={(lead: any) => {
+            const leadsWithPhone = filtered.filter((l) => l.phone);
+            const idx = leadsWithPhone.findIndex((l) => l.id === lead.id);
+            setCallModeStartIndex(idx >= 0 ? idx : 0);
+            setCallModeLeads(leadsWithPhone);
+          }}
         />
       ) : (
         <LeadsKanban leads={filtered} onRefresh={fetchLeads} />
