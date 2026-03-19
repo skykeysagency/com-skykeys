@@ -41,8 +41,33 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
   const [muted, setMuted] = useState(false);
   const [remoteHungUp, setRemoteHungUp] = useState(false);
   const [aircallCallId, setAircallCallId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Close search dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSearchResults(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filteredSearchLeads = searchQuery.trim()
+    ? leads.filter((l) => {
+        const q = searchQuery.toLowerCase();
+        return (
+          (l.phone ?? "").toLowerCase().includes(q) ||
+          (l.company ?? "").toLowerCase().includes(q) ||
+          `${l.first_name ?? ""} ${l.last_name ?? ""}`.toLowerCase().includes(q)
+        );
+      })
+    : [];
 
   const playHangupSound = () => {
     try {
