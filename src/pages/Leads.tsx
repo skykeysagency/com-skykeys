@@ -70,6 +70,10 @@ export default function Leads() {
       if (aHasCompany !== bHasCompany) return aHasCompany ? -1 : 1;
       const aVal = a[sortField] ?? "";
       const bVal = b[sortField] ?? "";
+      if (aVal === bVal) {
+        // Tri secondaire : toujours du plus récent au plus ancien
+        return a.created_at > b.created_at ? -1 : 1;
+      }
       return sortDir === "asc" ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
     });
     setFiltered(data);
