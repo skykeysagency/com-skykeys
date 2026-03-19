@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Plus, Search, Upload, LayoutGrid, List, Phone, Mail,
-  ChevronUp, ChevronDown, Globe, Loader2, PhoneCall, Users, Trash2,
+  ChevronUp, ChevronDown, Globe, Loader2, PhoneCall, Users, Trash2, MessageSquare,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
@@ -25,6 +25,8 @@ import NewLeadDialog from "@/components/leads/NewLeadDialog";
 import ImportCSVDialog from "@/components/leads/ImportCSVDialog";
 import CallMode from "@/components/calls/CallMode";
 
+type Tab = "all" | "contacted";
+
 type SortDir = "asc" | "desc";
 
 export default function Leads() {
@@ -32,6 +34,7 @@ export default function Leads() {
   const [leads, setLeads] = useState<any[]>([]);
   const [filtered, setFiltered] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>("all");
   const [view, setView] = useState<"list" | "kanban">("list");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -44,9 +47,25 @@ export default function Leads() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // call_logs keyed by lead_id → last call log
+  const [callLogs, setCallLogs] = useState<Record<string, any>>({});
   const loaderRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { fetchLeads(); }, [user]);
+  useEffect(() => { fetchLeads(); fetchCallLogs(); }, [user]);
+
+  const fetchCallLogs = async () => {
+    const { data } = await supabase
+      .from("call_logs")
+      .select("*")
+      .order("called_at", { ascending: false });
+    if (!data) return;
+    // Keep only the most recent call per lead
+    const map: Record<string, any> = {};
+    for (const log of data) {
+      if (!map[log.lead_id]) map[log.lead_id] = log;
+    }
+    setCallLogs(map);
+  };
 
   // Infinite scroll observer
   useEffect(() => {
@@ -61,13 +80,18 @@ export default function Leads() {
   }, [filtered]);
 
   // Reset visible count on filter change
-  useEffect(() => { setVisibleCount(30); }, [search, statusFilter]);
+  useEffect(() => { setVisibleCount(30); }, [search, statusFilter, tab]);
 
   // Clear selection when filters change
-  useEffect(() => { setSelectedIds(new Set()); }, [search, statusFilter]);
+  useEffect(() => { setSelectedIds(new Set()); }, [search, statusFilter, tab]);
 
   useEffect(() => {
     let data = [...leads];
+    // Onglet "Déjà contactés" : leads ayant au moins un appel
+    if (tab === "contacted") {
+      const contactedIds = new Set(Object.keys(callLogs));
+      data = data.filter((l) => contactedIds.has(l.id));
+    }
     if (search) {
       const q = search.toLowerCase();
       data = data.filter((l) =>
@@ -88,7 +112,7 @@ export default function Leads() {
       return sortDir === "asc" ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
     });
     setFiltered(data);
-  }, [leads, search, statusFilter, sortField, sortDir]);
+  }, [leads, callLogs, tab, search, statusFilter, sortField, sortDir]);
 
   const fetchLeads = async () => {
     setLoading(true);
@@ -195,6 +219,29 @@ export default function Leads() {
         </div>
       </div>
 
+      {/* ── Tabs ── */}
+      <div className="flex items-center gap-1 border-b border-border">
+        <button
+          onClick={() => setTab("all")}
+          className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${tab === "all" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+        >
+          Tous les leads
+          <span className={`ml-2 text-xs font-bold px-1.5 py-0.5 rounded-full ${tab === "all" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+            {leads.length}
+          </span>
+        </button>
+        <button
+          onClick={() => setTab("contacted")}
+          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${tab === "contacted" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+        >
+          <PhoneCall className="w-3.5 h-3.5" />
+          Déjà contactés
+          <span className={`ml-1 text-xs font-bold px-1.5 py-0.5 rounded-full ${tab === "contacted" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+            {Object.keys(callLogs).length}
+          </span>
+        </button>
+      </div>
+
       {/* ── Filters ── */}
       <div className="flex flex-col sm:flex-row gap-3 items-center">
         <div className="relative flex-1 max-w-sm">
@@ -277,6 +324,8 @@ export default function Leads() {
           onToggleOne={toggleOne}
           onToggleAll={toggleAll}
           allVisibleSelected={allVisibleSelected}
+          showCallNote={tab === "contacted"}
+          callLogs={callLogs}
         />
       ) : (
         <LeadsKanban leads={filtered} onRefresh={fetchLeads} />
@@ -314,7 +363,7 @@ export default function Leads() {
   );
 }
 
-function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore, selectedIds, onToggleOne, onToggleAll, allVisibleSelected }: any) {
+function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore, selectedIds, onToggleOne, onToggleAll, allVisibleSelected, showCallNote, callLogs }: any) {
   if (leads.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center bg-card border border-border rounded-2xl">
@@ -345,62 +394,82 @@ function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore, se
             <TableHead className="cursor-pointer select-none font-semibold text-foreground/70 text-xs uppercase tracking-wide" onClick={() => onSort("status")}>
               Statut <SortIcon field="status" />
             </TableHead>
+            {showCallNote && (
+              <TableHead className="font-semibold text-foreground/70 text-xs uppercase tracking-wide">
+                Dernier commentaire
+              </TableHead>
+            )}
             <TableHead className="cursor-pointer select-none font-semibold text-foreground/70 text-xs uppercase tracking-wide" onClick={() => onSort("created_at")}>
               Ajouté le <SortIcon field="created_at" />
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {leads.map((lead: any) => (
-            <TableRow
-              key={lead.id}
-              className={`hover:bg-accent/40 transition-colors border-b border-border/50 last:border-0 ${selectedIds.has(lead.id) ? "bg-primary/5" : ""}`}
-            >
-              <TableCell className="py-3 pl-4 w-10" onClick={(e) => e.stopPropagation()}>
-                <Checkbox
-                  checked={selectedIds.has(lead.id)}
-                  onCheckedChange={() => onToggleOne(lead.id)}
-                  aria-label={`Sélectionner ${lead.first_name} ${lead.last_name}`}
-                />
-              </TableCell>
-              <TableCell className="py-3">
-                <Link to={`/leads/${lead.id}`} className="flex items-center gap-3 group">
-                  <div className="w-8 h-8 rounded-xl gradient-primary flex items-center justify-center shrink-0 text-xs font-bold text-white shadow-primary">
-                    {lead.company ? lead.company.charAt(0).toUpperCase() : (lead.first_name?.charAt(0) ?? "")}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-foreground group-hover:text-primary transition-colors text-sm">
-                      {lead.company ?? "—"}
-                    </p>
-                    {lead.position && <p className="text-xs text-muted-foreground">{lead.position}</p>}
-                    {lead.website && (
-                      <a href={lead.website} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 text-xs text-primary hover:underline mt-0.5">
-                        <Globe className="w-3 h-3" /> Site web
+          {leads.map((lead: any) => {
+            const lastCall = callLogs?.[lead.id];
+            return (
+              <TableRow
+                key={lead.id}
+                className={`hover:bg-accent/40 transition-colors border-b border-border/50 last:border-0 ${selectedIds.has(lead.id) ? "bg-primary/5" : ""}`}
+              >
+                <TableCell className="py-3 pl-4 w-10" onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    checked={selectedIds.has(lead.id)}
+                    onCheckedChange={() => onToggleOne(lead.id)}
+                    aria-label={`Sélectionner ${lead.first_name} ${lead.last_name}`}
+                  />
+                </TableCell>
+                <TableCell className="py-3">
+                  <Link to={`/leads/${lead.id}`} className="flex items-center gap-3 group">
+                    <div className="w-8 h-8 rounded-xl gradient-primary flex items-center justify-center shrink-0 text-xs font-bold text-white shadow-primary">
+                      {lead.company ? lead.company.charAt(0).toUpperCase() : (lead.first_name?.charAt(0) ?? "")}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground group-hover:text-primary transition-colors text-sm">
+                        {lead.company ?? "—"}
+                      </p>
+                      {lead.position && <p className="text-xs text-muted-foreground">{lead.position}</p>}
+                      {lead.website && (
+                        <a href={lead.website} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 text-xs text-primary hover:underline mt-0.5">
+                          <Globe className="w-3 h-3" /> Site web
+                        </a>
+                      )}
+                    </div>
+                  </Link>
+                </TableCell>
+                <TableCell className="py-3">
+                  <div className="space-y-0.5">
+                    {lead.email && (
+                      <a href={`mailto:${lead.email}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                        <Mail className="w-3 h-3 shrink-0" /> {lead.email}
+                      </a>
+                    )}
+                    {lead.phone && (
+                      <a href={`tel:${lead.phone}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                        <Phone className="w-3 h-3 shrink-0" /> {lead.phone}
                       </a>
                     )}
                   </div>
-                </Link>
-              </TableCell>
-              <TableCell className="py-3">
-                <div className="space-y-0.5">
-                  {lead.email && (
-                    <a href={`mailto:${lead.email}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                      <Mail className="w-3 h-3 shrink-0" /> {lead.email}
-                    </a>
-                  )}
-                  {lead.phone && (
-                    <a href={`tel:${lead.phone}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                      <Phone className="w-3 h-3 shrink-0" /> {lead.phone}
-                    </a>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell className="py-3"><StatusBadge status={lead.status} /></TableCell>
-              <TableCell className="py-3 text-xs text-muted-foreground font-medium">
-                {format(new Date(lead.created_at), "d MMM yyyy", { locale: fr })}
-              </TableCell>
-            </TableRow>
-          ))}
+                </TableCell>
+                <TableCell className="py-3"><StatusBadge status={lead.status} /></TableCell>
+                {showCallNote && (
+                  <TableCell className="py-3 max-w-xs">
+                    {lastCall?.notes ? (
+                      <div className="flex items-start gap-1.5">
+                        <MessageSquare className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                        <p className="text-xs text-foreground line-clamp-2">{lastCall.notes}</p>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">—</span>
+                    )}
+                  </TableCell>
+                )}
+                <TableCell className="py-3 text-xs text-muted-foreground font-medium">
+                  {format(new Date(lead.created_at), "d MMM yyyy", { locale: fr })}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
       {hasMore && (
