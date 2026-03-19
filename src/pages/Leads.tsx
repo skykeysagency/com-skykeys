@@ -80,13 +80,18 @@ export default function Leads() {
   }, [filtered]);
 
   // Reset visible count on filter change
-  useEffect(() => { setVisibleCount(30); }, [search, statusFilter]);
+  useEffect(() => { setVisibleCount(30); }, [search, statusFilter, tab]);
 
   // Clear selection when filters change
-  useEffect(() => { setSelectedIds(new Set()); }, [search, statusFilter]);
+  useEffect(() => { setSelectedIds(new Set()); }, [search, statusFilter, tab]);
 
   useEffect(() => {
     let data = [...leads];
+    // Onglet "Déjà contactés" : leads ayant au moins un appel
+    if (tab === "contacted") {
+      const contactedIds = new Set(Object.keys(callLogs));
+      data = data.filter((l) => contactedIds.has(l.id));
+    }
     if (search) {
       const q = search.toLowerCase();
       data = data.filter((l) =>
@@ -107,7 +112,7 @@ export default function Leads() {
       return sortDir === "asc" ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
     });
     setFiltered(data);
-  }, [leads, search, statusFilter, sortField, sortDir]);
+  }, [leads, callLogs, tab, search, statusFilter, sortField, sortDir]);
 
   const fetchLeads = async () => {
     setLoading(true);
