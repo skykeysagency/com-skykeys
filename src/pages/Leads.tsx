@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Plus, Search, Upload, LayoutGrid, List, Phone, Mail,
-  ChevronUp, ChevronDown, Globe, Loader2, PhoneCall, Users, Trash2,
+  ChevronUp, ChevronDown, Globe, Loader2, PhoneCall, Users, Trash2, MessageSquare,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
@@ -24,6 +24,8 @@ import { toast } from "sonner";
 import NewLeadDialog from "@/components/leads/NewLeadDialog";
 import ImportCSVDialog from "@/components/leads/ImportCSVDialog";
 import CallMode from "@/components/calls/CallMode";
+
+type Tab = "all" | "contacted";
 
 type SortDir = "asc" | "desc";
 
