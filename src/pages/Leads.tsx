@@ -34,6 +34,7 @@ export default function Leads() {
   const [leads, setLeads] = useState<any[]>([]);
   const [filtered, setFiltered] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>("all");
   const [view, setView] = useState<"list" | "kanban">("list");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -46,9 +47,25 @@ export default function Leads() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // call_logs keyed by lead_id → last call log
+  const [callLogs, setCallLogs] = useState<Record<string, any>>({});
   const loaderRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { fetchLeads(); }, [user]);
+  useEffect(() => { fetchLeads(); fetchCallLogs(); }, [user]);
+
+  const fetchCallLogs = async () => {
+    const { data } = await supabase
+      .from("call_logs")
+      .select("*")
+      .order("called_at", { ascending: false });
+    if (!data) return;
+    // Keep only the most recent call per lead
+    const map: Record<string, any> = {};
+    for (const log of data) {
+      if (!map[log.lead_id]) map[log.lead_id] = log;
+    }
+    setCallLogs(map);
+  };
 
   // Infinite scroll observer
   useEffect(() => {
