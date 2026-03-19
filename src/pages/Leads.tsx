@@ -314,7 +314,7 @@ export default function Leads() {
   );
 }
 
-function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore }: any) {
+function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore, selectedIds, onToggleOne, onToggleAll, allVisibleSelected }: any) {
   if (leads.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center bg-card border border-border rounded-2xl">
@@ -331,6 +331,13 @@ function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore }: 
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/40 hover:bg-muted/40 border-b border-border">
+            <TableHead className="w-10 py-3 pl-4">
+              <Checkbox
+                checked={allVisibleSelected}
+                onCheckedChange={onToggleAll}
+                aria-label="Tout sélectionner"
+              />
+            </TableHead>
             <TableHead className="cursor-pointer select-none font-semibold text-foreground/70 text-xs uppercase tracking-wide py-3" onClick={() => onSort("last_name")}>
               Nom <SortIcon field="last_name" />
             </TableHead>
@@ -348,7 +355,17 @@ function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore }: 
         </TableHeader>
         <TableBody>
           {leads.map((lead: any) => (
-            <TableRow key={lead.id} className="hover:bg-accent/40 transition-colors border-b border-border/50 last:border-0">
+            <TableRow
+              key={lead.id}
+              className={`hover:bg-accent/40 transition-colors border-b border-border/50 last:border-0 ${selectedIds.has(lead.id) ? "bg-primary/5" : ""}`}
+            >
+              <TableCell className="py-3 pl-4 w-10" onClick={(e) => e.stopPropagation()}>
+                <Checkbox
+                  checked={selectedIds.has(lead.id)}
+                  onCheckedChange={() => onToggleOne(lead.id)}
+                  aria-label={`Sélectionner ${lead.first_name} ${lead.last_name}`}
+                />
+              </TableCell>
               <TableCell className="py-3">
                 <Link to={`/leads/${lead.id}`} className="flex items-center gap-3 group">
                   <div className="w-8 h-8 rounded-xl gradient-primary flex items-center justify-center shrink-0 text-xs font-bold text-white shadow-primary">
