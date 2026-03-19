@@ -43,6 +43,7 @@ export default function Leads() {
   const [showNewLead, setShowNewLead] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [callModeLeads, setCallModeLeads] = useState<any[] | null>(null);
+  const [callModeStartIndex, setCallModeStartIndex] = useState(0);
   const [visibleCount, setVisibleCount] = useState(30);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
