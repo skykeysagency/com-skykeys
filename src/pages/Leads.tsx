@@ -338,13 +338,10 @@ function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore, se
                 aria-label="Tout sélectionner"
               />
             </TableHead>
-            <TableHead className="cursor-pointer select-none font-semibold text-foreground/70 text-xs uppercase tracking-wide py-3" onClick={() => onSort("last_name")}>
-              Nom <SortIcon field="last_name" />
-            </TableHead>
-            <TableHead className="font-semibold text-foreground/70 text-xs uppercase tracking-wide">Contact</TableHead>
-            <TableHead className="cursor-pointer select-none font-semibold text-foreground/70 text-xs uppercase tracking-wide" onClick={() => onSort("company")}>
+            <TableHead className="cursor-pointer select-none font-semibold text-foreground/70 text-xs uppercase tracking-wide py-3" onClick={() => onSort("company")}>
               Entreprise <SortIcon field="company" />
             </TableHead>
+            <TableHead className="font-semibold text-foreground/70 text-xs uppercase tracking-wide">Contact</TableHead>
             <TableHead className="cursor-pointer select-none font-semibold text-foreground/70 text-xs uppercase tracking-wide" onClick={() => onSort("status")}>
               Statut <SortIcon field="status" />
             </TableHead>
@@ -369,11 +366,19 @@ function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore, se
               <TableCell className="py-3">
                 <Link to={`/leads/${lead.id}`} className="flex items-center gap-3 group">
                   <div className="w-8 h-8 rounded-xl gradient-primary flex items-center justify-center shrink-0 text-xs font-bold text-white shadow-primary">
-                    {lead.first_name?.charAt(0)}{lead.last_name?.charAt(0)}
+                    {lead.company ? lead.company.charAt(0).toUpperCase() : (lead.first_name?.charAt(0) ?? "")}
                   </div>
-                  <span className="font-semibold text-foreground group-hover:text-primary transition-colors text-sm">
-                    {lead.first_name} {lead.last_name}
-                  </span>
+                  <div>
+                    <p className="font-semibold text-foreground group-hover:text-primary transition-colors text-sm">
+                      {lead.company ?? "—"}
+                    </p>
+                    {lead.position && <p className="text-xs text-muted-foreground">{lead.position}</p>}
+                    {lead.website && (
+                      <a href={lead.website} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 text-xs text-primary hover:underline mt-0.5">
+                        <Globe className="w-3 h-3" /> Site web
+                      </a>
+                    )}
+                  </div>
                 </Link>
               </TableCell>
               <TableCell className="py-3">
@@ -386,17 +391,6 @@ function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore, se
                   {lead.phone && (
                     <a href={`tel:${lead.phone}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
                       <Phone className="w-3 h-3 shrink-0" /> {lead.phone}
-                    </a>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell className="py-3">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{lead.company ?? "—"}</p>
-                  {lead.position && <p className="text-xs text-muted-foreground">{lead.position}</p>}
-                  {lead.website && (
-                    <a href={lead.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-primary hover:underline mt-0.5">
-                      <Globe className="w-3 h-3" /> Site web
                     </a>
                   )}
                 </div>
