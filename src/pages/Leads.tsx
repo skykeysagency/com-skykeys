@@ -342,7 +342,7 @@ export default function Leads() {
       <ImportCSVDialog open={showImport} onClose={() => setShowImport(false)} onImported={fetchLeads} />
 
       {callModeLeads && (
-        <CallMode leads={callModeLeads} onClose={() => setCallModeLeads(null)} onLeadUpdated={fetchLeads} />
+        <CallMode leads={callModeLeads} startIndex={callModeStartIndex} onClose={() => setCallModeLeads(null)} onLeadUpdated={fetchLeads} />
       )}
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
