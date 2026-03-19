@@ -219,6 +219,29 @@ export default function Leads() {
         </div>
       </div>
 
+      {/* ── Tabs ── */}
+      <div className="flex items-center gap-1 border-b border-border">
+        <button
+          onClick={() => setTab("all")}
+          className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${tab === "all" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+        >
+          Tous les leads
+          <span className={`ml-2 text-xs font-bold px-1.5 py-0.5 rounded-full ${tab === "all" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+            {leads.length}
+          </span>
+        </button>
+        <button
+          onClick={() => setTab("contacted")}
+          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${tab === "contacted" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+        >
+          <PhoneCall className="w-3.5 h-3.5" />
+          Déjà contactés
+          <span className={`ml-1 text-xs font-bold px-1.5 py-0.5 rounded-full ${tab === "contacted" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+            {Object.keys(callLogs).length}
+          </span>
+        </button>
+      </div>
+
       {/* ── Filters ── */}
       <div className="flex flex-col sm:flex-row gap-3 items-center">
         <div className="relative flex-1 max-w-sm">
@@ -301,6 +324,8 @@ export default function Leads() {
           onToggleOne={toggleOne}
           onToggleAll={toggleAll}
           allVisibleSelected={allVisibleSelected}
+          showCallNote={tab === "contacted"}
+          callLogs={callLogs}
         />
       ) : (
         <LeadsKanban leads={filtered} onRefresh={fetchLeads} />
