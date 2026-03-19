@@ -43,6 +43,7 @@ export default function Leads() {
   const [showNewLead, setShowNewLead] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [callModeLeads, setCallModeLeads] = useState<any[] | null>(null);
+  const [callModeStartIndex, setCallModeStartIndex] = useState(0);
   const [visibleCount, setVisibleCount] = useState(30);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -326,6 +327,12 @@ export default function Leads() {
           allVisibleSelected={allVisibleSelected}
           showCallNote={tab === "contacted"}
           callLogs={callLogs}
+          onCallLead={(lead: any) => {
+            const leadsWithPhone = filtered.filter((l) => l.phone);
+            const idx = leadsWithPhone.findIndex((l) => l.id === lead.id);
+            setCallModeStartIndex(idx >= 0 ? idx : 0);
+            setCallModeLeads(leadsWithPhone);
+          }}
         />
       ) : (
         <LeadsKanban leads={filtered} onRefresh={fetchLeads} />
@@ -335,7 +342,7 @@ export default function Leads() {
       <ImportCSVDialog open={showImport} onClose={() => setShowImport(false)} onImported={fetchLeads} />
 
       {callModeLeads && (
-        <CallMode leads={callModeLeads} onClose={() => setCallModeLeads(null)} onLeadUpdated={fetchLeads} />
+        <CallMode leads={callModeLeads} startIndex={callModeStartIndex} onClose={() => setCallModeLeads(null)} onLeadUpdated={fetchLeads} />
       )}
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
@@ -363,7 +370,7 @@ export default function Leads() {
   );
 }
 
-function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore, selectedIds, onToggleOne, onToggleAll, allVisibleSelected, showCallNote, callLogs }: any) {
+function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore, selectedIds, onToggleOne, onToggleAll, allVisibleSelected, showCallNote, callLogs, onCallLead }: any) {
   if (leads.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center bg-card border border-border rounded-2xl">
@@ -402,6 +409,7 @@ function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore, se
             <TableHead className="cursor-pointer select-none font-semibold text-foreground/70 text-xs uppercase tracking-wide" onClick={() => onSort("created_at")}>
               Ajouté le <SortIcon field="created_at" />
             </TableHead>
+            <TableHead className="w-12" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -466,6 +474,17 @@ function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore, se
                 )}
                 <TableCell className="py-3 text-xs text-muted-foreground font-medium">
                   {format(new Date(lead.created_at), "d MMM yyyy", { locale: fr })}
+                </TableCell>
+                <TableCell className="py-3 pr-4 w-12" onClick={(e) => e.stopPropagation()}>
+                  {lead.phone && (
+                    <button
+                      onClick={() => onCallLead(lead)}
+                      title={`Appeler ${lead.phone}`}
+                      className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 flex items-center justify-center transition-all shadow-sm"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-white" />
+                    </button>
+                  )}
                 </TableCell>
               </TableRow>
             );
