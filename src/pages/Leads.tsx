@@ -4,17 +4,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge, LEAD_STATUSES } from "@/lib/leadStatus";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Plus, Search, Upload, LayoutGrid, List, Phone, Mail,
-  ChevronUp, ChevronDown, Globe, Loader2, PhoneCall, Users
+  ChevronUp, ChevronDown, Globe, Loader2, PhoneCall, Users, Trash2,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { toast } from "sonner";
 import NewLeadDialog from "@/components/leads/NewLeadDialog";
 import ImportCSVDialog from "@/components/leads/ImportCSVDialog";
 import CallMode from "@/components/calls/CallMode";
@@ -35,6 +41,9 @@ export default function Leads() {
   const [showImport, setShowImport] = useState(false);
   const [callModeLeads, setCallModeLeads] = useState<any[] | null>(null);
   const [visibleCount, setVisibleCount] = useState(30);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const loaderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { fetchLeads(); }, [user]);
@@ -54,6 +63,9 @@ export default function Leads() {
   // Reset visible count on filter change
   useEffect(() => { setVisibleCount(30); }, [search, statusFilter]);
 
+  // Clear selection when filters change
+  useEffect(() => { setSelectedIds(new Set()); }, [search, statusFilter]);
+
   useEffect(() => {
     let data = [...leads];
     if (search) {
@@ -71,7 +83,6 @@ export default function Leads() {
       const aVal = a[sortField] ?? "";
       const bVal = b[sortField] ?? "";
       if (aVal === bVal) {
-        // Tri secondaire : toujours du plus récent au plus ancien
         return a.created_at > b.created_at ? -1 : 1;
       }
       return sortDir === "asc" ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
@@ -89,6 +100,49 @@ export default function Leads() {
   const handleSort = (field: string) => {
     if (sortField === field) setSortDir(sortDir === "asc" ? "desc" : "asc");
     else { setSortField(field); setSortDir("asc"); }
+  };
+
+  const visibleLeads = filtered.slice(0, visibleCount);
+  const allVisibleSelected = visibleLeads.length > 0 && visibleLeads.every((l) => selectedIds.has(l.id));
+  const someSelected = selectedIds.size > 0;
+
+  const toggleAll = () => {
+    if (allVisibleSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        visibleLeads.forEach((l) => next.delete(l.id));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        visibleLeads.forEach((l) => next.add(l.id));
+        return next;
+      });
+    }
+  };
+
+  const toggleOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    setDeleting(true);
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from("leads").delete().in("id", ids);
+    setDeleting(false);
+    setShowDeleteConfirm(false);
+    if (error) {
+      toast.error("Erreur lors de la suppression.");
+    } else {
+      toast.success(`${ids.length} lead${ids.length > 1 ? "s" : ""} supprimé${ids.length > 1 ? "s" : ""}.`);
+      setSelectedIds(new Set());
+      fetchLeads();
+    }
   };
 
   const SortIcon = ({ field }: { field: string }) => (
@@ -123,7 +177,7 @@ export default function Leads() {
             onClick={() => {
               const leadsWithPhone = filtered.filter((l) => l.phone);
               if (leadsWithPhone.length === 0) {
-                import("sonner").then(({ toast }) => toast.error("Aucun lead avec un numéro de téléphone."));
+                toast.error("Aucun lead avec un numéro de téléphone.");
                 return;
               }
               setCallModeLeads(leadsWithPhone);
@@ -183,6 +237,27 @@ export default function Leads() {
         </span>
       </div>
 
+      {/* ── Bulk action bar ── */}
+      {someSelected && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-destructive/10 border border-destructive/20 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200">
+          <span className="text-sm font-semibold text-destructive">
+            {selectedIds.size} lead{selectedIds.size > 1 ? "s" : ""} sélectionné{selectedIds.size > 1 ? "s" : ""}
+          </span>
+          <Button
+            variant="destructive"
+            size="sm"
+            className="gap-2 h-8 ml-auto"
+            onClick={() => setShowDeleteConfirm(true)}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Supprimer la sélection
+          </Button>
+          <Button variant="outline" size="sm" className="h-8" onClick={() => setSelectedIds(new Set())}>
+            Annuler
+          </Button>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-20">
           <div className="flex flex-col items-center gap-3">
@@ -191,7 +266,18 @@ export default function Leads() {
           </div>
         </div>
       ) : view === "list" ? (
-        <LeadsTable leads={filtered.slice(0, visibleCount)} onSort={handleSort} SortIcon={SortIcon} onRefresh={fetchLeads} loaderRef={loaderRef} hasMore={visibleCount < filtered.length} />
+        <LeadsTable
+          leads={visibleLeads}
+          onSort={handleSort}
+          SortIcon={SortIcon}
+          onRefresh={fetchLeads}
+          loaderRef={loaderRef}
+          hasMore={visibleCount < filtered.length}
+          selectedIds={selectedIds}
+          onToggleOne={toggleOne}
+          onToggleAll={toggleAll}
+          allVisibleSelected={allVisibleSelected}
+        />
       ) : (
         <LeadsKanban leads={filtered} onRefresh={fetchLeads} />
       )}
@@ -202,6 +288,28 @@ export default function Leads() {
       {callModeLeads && (
         <CallMode leads={callModeLeads} onClose={() => setCallModeLeads(null)} onLeadUpdated={fetchLeads} />
       )}
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer {selectedIds.size} lead{selectedIds.size > 1 ? "s" : ""} ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Les leads sélectionnés ainsi que toutes leurs données associées seront définitivement supprimés.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={deleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
