@@ -13,7 +13,7 @@ import {
   Phone, PhoneOff, PhoneCall, X, ChevronRight, ChevronLeft,
   Clock, Building, Mail, Globe, MessageSquare, Calendar,
   User, Loader2, Check, NotebookPen, CalendarPlus, Mic,
-  MicOff, SkipForward
+  MicOff, SkipForward, Search
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -41,8 +41,33 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
   const [muted, setMuted] = useState(false);
   const [remoteHungUp, setRemoteHungUp] = useState(false);
   const [aircallCallId, setAircallCallId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Close search dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSearchResults(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filteredSearchLeads = searchQuery.trim()
+    ? leads.filter((l) => {
+        const q = searchQuery.toLowerCase();
+        return (
+          (l.phone ?? "").toLowerCase().includes(q) ||
+          (l.company ?? "").toLowerCase().includes(q) ||
+          `${l.first_name ?? ""} ${l.last_name ?? ""}`.toLowerCase().includes(q)
+        );
+      })
+    : [];
 
   const playHangupSound = () => {
     try {
@@ -288,15 +313,64 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
       {/* Backdrop */}
       <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col">
         {/* ── Top bar ── */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card shadow-sm shrink-0">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card shadow-sm shrink-0 gap-4">
+          <div className="flex items-center gap-3 shrink-0">
             <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
             <span className="text-sm font-semibold text-foreground">Mode appel</span>
             <Badge variant="outline" className="text-xs">
               {index + 1} / {leads.length}
             </Badge>
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* ── Search bar ── */}
+          <div className="flex-1 max-w-sm relative" ref={searchRef}>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Rechercher par entreprise ou téléphone..."
+                className="pl-9 h-8 text-sm bg-muted/50"
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setShowSearchResults(true); }}
+                onFocus={() => setShowSearchResults(true)}
+              />
+            </div>
+            {showSearchResults && filteredSearchLeads.length > 0 && (
+              <div className="absolute top-full mt-1 left-0 right-0 z-50 bg-card border border-border rounded-xl shadow-lg overflow-hidden max-h-64 overflow-y-auto">
+                {filteredSearchLeads.map((l, i) => {
+                  const realIndex = leads.indexOf(l);
+                  return (
+                    <button
+                      key={l.id}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent/60 transition-colors text-left"
+                      onClick={() => {
+                        setIndex(realIndex);
+                        setSearchQuery("");
+                        setShowSearchResults(false);
+                      }}
+                    >
+                      <div className="w-7 h-7 rounded-lg gradient-primary flex items-center justify-center shrink-0 text-xs font-bold text-white">
+                        {l.company ? l.company.charAt(0).toUpperCase() : l.first_name?.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {l.company ?? `${l.first_name} ${l.last_name}`}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">{l.phone}</p>
+                      </div>
+                      <span className="text-xs text-muted-foreground shrink-0">#{realIndex + 1}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {showSearchResults && searchQuery.trim() && filteredSearchLeads.length === 0 && (
+              <div className="absolute top-full mt-1 left-0 right-0 z-50 bg-card border border-border rounded-xl shadow-lg px-4 py-3 text-sm text-muted-foreground">
+                Aucun résultat
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
             <Button variant="ghost" size="sm" onClick={goPrev} disabled={isFirst} className="gap-1 text-xs">
               <ChevronLeft className="w-3.5 h-3.5" /> Précédent
             </Button>
