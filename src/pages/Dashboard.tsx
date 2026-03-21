@@ -246,6 +246,49 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* ── Rappels ── */}
+      {reminders.length > 0 && (
+        <div className="bg-card border border-border rounded-2xl shadow-card p-5">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center">
+              <Bell className="w-3.5 h-3.5 text-amber-600" />
+            </div>
+            <h2 className="text-sm font-semibold text-foreground">Rappels à venir</h2>
+            <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+              {reminders.length}
+            </span>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {reminders.map((r) => {
+              const reminderDate = new Date(r.reminder_at);
+              const isToday = isSameDay(reminderDate, new Date());
+              return (
+                <Link
+                  key={r.id}
+                  to={r.lead_id ? `/leads/${r.lead_id}` : "#"}
+                  className="flex items-start gap-3 p-3 rounded-xl border border-border hover:bg-accent transition-colors group"
+                >
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isToday ? "bg-amber-100" : "bg-muted"}`}>
+                    <Bell className={`w-4 h-4 ${isToday ? "text-amber-600" : "text-muted-foreground"}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                      {(r.leads as any)?.company ?? `${(r.leads as any)?.first_name} ${(r.leads as any)?.last_name}`}
+                    </p>
+                    {r.notes && (
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">{r.notes}</p>
+                    )}
+                    <p className={`text-xs font-medium mt-1 ${isToday ? "text-amber-600" : "text-muted-foreground"}`}>
+                      {isToday ? "Aujourd'hui " : ""}{format(reminderDate, isToday ? "HH:mm" : "EEEE d MMM à HH:mm", { locale: fr })}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
