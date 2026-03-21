@@ -251,6 +251,14 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
       notes: editForm.notes || null,
     }).eq("id", lead.id);
 
+    // Build reminder timestamp if set
+    let reminderAt: string | null = null;
+    if (reminderDate && reminderTime) {
+      reminderAt = new Date(`${reminderDate}T${reminderTime}:00`).toISOString();
+    } else if (reminderDate) {
+      reminderAt = new Date(`${reminderDate}T09:00:00`).toISOString();
+    }
+
     // Log call
     await supabase.from("call_logs").insert({
       user_id: user.id,
@@ -258,6 +266,7 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
       notes: callNote || null,
       status: outcome || "completed",
       duration_seconds: callDuration,
+      reminder_at: reminderAt,
     });
 
     // Activity log
@@ -268,10 +277,10 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
       user_id: user.id,
       lead_id: lead.id,
       type: "appel",
-      content: `${outcomeLabel[outcome] || "Appel"} (${formatDuration(callDuration)})${callNote ? ` — ${callNote}` : ""}`,
+      content: `${outcomeLabel[outcome] || "Appel"} (${formatDuration(callDuration)})${callNote ? ` — ${callNote}` : ""}${reminderAt ? ` · Rappel le ${format(new Date(reminderAt), "dd/MM à HH:mm", { locale: fr })}` : ""}`,
     });
 
-    toast.success("Appel enregistré !");
+    toast.success(reminderAt ? `Appel enregistré ! Rappel le ${format(new Date(reminderAt), "dd/MM à HH:mm", { locale: fr })}` : "Appel enregistré !");
     setCallLogged(true);
     onLeadUpdated();
     setSaving(false);
