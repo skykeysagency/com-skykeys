@@ -117,6 +117,8 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
       setOutcome("");
       setCallLogged(false);
       setAircallCallId(null);
+      setReminderDate("");
+      setReminderTime("");
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [index, lead?.id]);
