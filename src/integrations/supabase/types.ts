@@ -132,6 +132,7 @@ export type Database = {
           id: string
           lead_id: string
           notes: string | null
+          reminder_at: string | null
           status: string | null
           user_id: string
         }
@@ -143,6 +144,7 @@ export type Database = {
           id?: string
           lead_id: string
           notes?: string | null
+          reminder_at?: string | null
           status?: string | null
           user_id: string
         }
@@ -154,6 +156,7 @@ export type Database = {
           id?: string
           lead_id?: string
           notes?: string | null
+          reminder_at?: string | null
           status?: string | null
           user_id?: string
         }
