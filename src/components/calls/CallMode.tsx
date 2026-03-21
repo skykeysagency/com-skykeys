@@ -13,7 +13,7 @@ import {
   Phone, PhoneOff, PhoneCall, X, ChevronRight, ChevronLeft,
   Clock, Building, Mail, Globe, MessageSquare, Calendar,
   User, Loader2, Check, NotebookPen, CalendarPlus, Mic,
-  MicOff, SkipForward, Search
+  MicOff, SkipForward, Search, Bell
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
