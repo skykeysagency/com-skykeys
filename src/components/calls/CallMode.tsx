@@ -13,7 +13,7 @@ import {
   Phone, PhoneOff, PhoneCall, X, ChevronRight, ChevronLeft,
   Clock, Building, Mail, Globe, MessageSquare, Calendar,
   User, Loader2, Check, NotebookPen, CalendarPlus, Mic,
-  MicOff, SkipForward, Search
+  MicOff, SkipForward, Search, Bell
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -43,6 +43,8 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
   const [aircallCallId, setAircallCallId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [reminderDate, setReminderDate] = useState("");
+  const [reminderTime, setReminderTime] = useState("");
   const searchRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -115,6 +117,8 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
       setOutcome("");
       setCallLogged(false);
       setAircallCallId(null);
+      setReminderDate("");
+      setReminderTime("");
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [index, lead?.id]);
@@ -247,6 +251,14 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
       notes: editForm.notes || null,
     }).eq("id", lead.id);
 
+    // Build reminder timestamp if set
+    let reminderAt: string | null = null;
+    if (reminderDate && reminderTime) {
+      reminderAt = new Date(`${reminderDate}T${reminderTime}:00`).toISOString();
+    } else if (reminderDate) {
+      reminderAt = new Date(`${reminderDate}T09:00:00`).toISOString();
+    }
+
     // Log call
     await supabase.from("call_logs").insert({
       user_id: user.id,
@@ -254,6 +266,7 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
       notes: callNote || null,
       status: outcome || "completed",
       duration_seconds: callDuration,
+      reminder_at: reminderAt,
     });
 
     // Activity log
@@ -264,10 +277,10 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
       user_id: user.id,
       lead_id: lead.id,
       type: "appel",
-      content: `${outcomeLabel[outcome] || "Appel"} (${formatDuration(callDuration)})${callNote ? ` — ${callNote}` : ""}`,
+      content: `${outcomeLabel[outcome] || "Appel"} (${formatDuration(callDuration)})${callNote ? ` — ${callNote}` : ""}${reminderAt ? ` · Rappel le ${format(new Date(reminderAt), "dd/MM à HH:mm", { locale: fr })}` : ""}`,
     });
 
-    toast.success("Appel enregistré !");
+    toast.success(reminderAt ? `Appel enregistré ! Rappel le ${format(new Date(reminderAt), "dd/MM à HH:mm", { locale: fr })}` : "Appel enregistré !");
     setCallLogged(true);
     onLeadUpdated();
     setSaving(false);
@@ -583,6 +596,36 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
                     className="text-sm resize-none"
                     autoFocus
                   />
+                </div>
+
+                {/* Rappel */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Bell className="w-3.5 h-3.5 text-amber-500" />
+                    Rappel (optionnel)
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="date"
+                      value={reminderDate}
+                      onChange={(e) => setReminderDate(e.target.value)}
+                      className="h-8 text-sm flex-1"
+                      min={format(new Date(), "yyyy-MM-dd")}
+                    />
+                    <Input
+                      type="time"
+                      value={reminderTime}
+                      onChange={(e) => setReminderTime(e.target.value)}
+                      className="h-8 text-sm w-28"
+                      disabled={!reminderDate}
+                    />
+                  </div>
+                  {reminderDate && (
+                    <p className="text-xs text-amber-600 flex items-center gap-1">
+                      <Bell className="w-3 h-3" />
+                      Rappel le {format(new Date(`${reminderDate}T${reminderTime || "09:00"}:00`), "EEEE d MMMM à HH:mm", { locale: fr })}
+                    </p>
+                  )}
                 </div>
 
                 {/* Actions */}

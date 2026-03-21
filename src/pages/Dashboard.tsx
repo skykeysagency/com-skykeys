@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { StatusBadge, LEAD_STATUSES } from "@/lib/leadStatus";
-import { Users, Calendar, Phone, TrendingUp, ChevronRight, ArrowUpRight } from "lucide-react";
+import { Users, Calendar, Phone, TrendingUp, ChevronRight, ArrowUpRight, Bell } from "lucide-react";
 import { Link } from "react-router-dom";
-import { format, startOfDay, endOfDay } from "date-fns";
+import { format, startOfDay, endOfDay, isSameDay, isAfter } from "date-fns";
 import { fr } from "date-fns/locale";
 
 export default function Dashboard() {
@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [recentLeads, setRecentLeads] = useState<any[]>([]);
   const [todayAppointments, setTodayAppointments] = useState<any[]>([]);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [reminders, setReminders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { if (user) fetchDashboardData(); }, [user]);
@@ -20,12 +21,13 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     const now = new Date();
-    const [leadsRes, apptRes, callsRes, recentRes, todayApptRes] = await Promise.all([
+    const [leadsRes, apptRes, callsRes, recentRes, todayApptRes, remindersRes] = await Promise.all([
       supabase.from("leads").select("status"),
       supabase.from("appointments").select("id", { count: "exact" }).gte("start_at", startOfDay(now).toISOString()).lte("start_at", endOfDay(now).toISOString()),
       supabase.from("call_logs").select("id", { count: "exact" }),
       supabase.from("leads").select("id, first_name, last_name, company, status, created_at").order("created_at", { ascending: false }).limit(5),
       supabase.from("appointments").select("id, title, start_at, lead_id, leads(first_name, last_name)").gte("start_at", startOfDay(now).toISOString()).lte("start_at", endOfDay(now).toISOString()).order("start_at"),
+      supabase.from("call_logs").select("id, reminder_at, notes, lead_id, leads(first_name, last_name, company)").not("reminder_at", "is", null).gte("reminder_at", now.toISOString()).order("reminder_at").limit(10),
     ]);
     const leads = leadsRes.data ?? [];
     const counts: Record<string, number> = {};
@@ -39,6 +41,7 @@ export default function Dashboard() {
     });
     setRecentLeads(recentRes.data ?? []);
     setTodayAppointments(todayApptRes.data ?? []);
+    setReminders(remindersRes.data ?? []);
     setLoading(false);
   };
 
@@ -243,6 +246,49 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* ── Rappels ── */}
+      {reminders.length > 0 && (
+        <div className="bg-card border border-border rounded-2xl shadow-card p-5">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center">
+              <Bell className="w-3.5 h-3.5 text-amber-600" />
+            </div>
+            <h2 className="text-sm font-semibold text-foreground">Rappels à venir</h2>
+            <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+              {reminders.length}
+            </span>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {reminders.map((r) => {
+              const reminderDate = new Date(r.reminder_at);
+              const isToday = isSameDay(reminderDate, new Date());
+              return (
+                <Link
+                  key={r.id}
+                  to={r.lead_id ? `/leads/${r.lead_id}` : "#"}
+                  className="flex items-start gap-3 p-3 rounded-xl border border-border hover:bg-accent transition-colors group"
+                >
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isToday ? "bg-amber-100" : "bg-muted"}`}>
+                    <Bell className={`w-4 h-4 ${isToday ? "text-amber-600" : "text-muted-foreground"}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                      {(r.leads as any)?.company ?? `${(r.leads as any)?.first_name} ${(r.leads as any)?.last_name}`}
+                    </p>
+                    {r.notes && (
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">{r.notes}</p>
+                    )}
+                    <p className={`text-xs font-medium mt-1 ${isToday ? "text-amber-600" : "text-muted-foreground"}`}>
+                      {isToday ? "Aujourd'hui " : ""}{format(reminderDate, isToday ? "HH:mm" : "EEEE d MMM à HH:mm", { locale: fr })}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
