@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { StatusBadge, LEAD_STATUSES } from "@/lib/leadStatus";
-import { Users, Calendar, Phone, TrendingUp, ChevronRight, ArrowUpRight } from "lucide-react";
+import { Users, Calendar, Phone, TrendingUp, ChevronRight, ArrowUpRight, Bell } from "lucide-react";
 import { Link } from "react-router-dom";
-import { format, startOfDay, endOfDay } from "date-fns";
+import { format, startOfDay, endOfDay, isSameDay, isAfter } from "date-fns";
 import { fr } from "date-fns/locale";
 
 export default function Dashboard() {
@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [recentLeads, setRecentLeads] = useState<any[]>([]);
   const [todayAppointments, setTodayAppointments] = useState<any[]>([]);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [reminders, setReminders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { if (user) fetchDashboardData(); }, [user]);
