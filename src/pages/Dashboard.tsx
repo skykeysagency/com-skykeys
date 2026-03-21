@@ -21,12 +21,13 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     const now = new Date();
-    const [leadsRes, apptRes, callsRes, recentRes, todayApptRes] = await Promise.all([
+    const [leadsRes, apptRes, callsRes, recentRes, todayApptRes, remindersRes] = await Promise.all([
       supabase.from("leads").select("status"),
       supabase.from("appointments").select("id", { count: "exact" }).gte("start_at", startOfDay(now).toISOString()).lte("start_at", endOfDay(now).toISOString()),
       supabase.from("call_logs").select("id", { count: "exact" }),
       supabase.from("leads").select("id, first_name, last_name, company, status, created_at").order("created_at", { ascending: false }).limit(5),
       supabase.from("appointments").select("id, title, start_at, lead_id, leads(first_name, last_name)").gte("start_at", startOfDay(now).toISOString()).lte("start_at", endOfDay(now).toISOString()).order("start_at"),
+      supabase.from("call_logs").select("id, reminder_at, notes, lead_id, leads(first_name, last_name, company)").not("reminder_at", "is", null).gte("reminder_at", now.toISOString()).order("reminder_at").limit(10),
     ]);
     const leads = leadsRes.data ?? [];
     const counts: Record<string, number> = {};
@@ -40,6 +41,7 @@ export default function Dashboard() {
     });
     setRecentLeads(recentRes.data ?? []);
     setTodayAppointments(todayApptRes.data ?? []);
+    setReminders(remindersRes.data ?? []);
     setLoading(false);
   };
 
