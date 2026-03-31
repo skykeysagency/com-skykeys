@@ -126,10 +126,18 @@ export default function ImportCSVDialog({ open, onClose, onImported }: Props) {
       notes: r.notes || null,
       status: "nouveau" as const,
     }));
-    const { error } = await supabase.from("leads").insert(data);
-    if (error) {
-      toast.error("Erreur lors de l'import : " + error.message);
-    } else {
+    const BATCH_SIZE = 500;
+    let hasError = false;
+    for (let i = 0; i < data.length; i += BATCH_SIZE) {
+      const batch = data.slice(i, i + BATCH_SIZE);
+      const { error } = await supabase.from("leads").insert(batch);
+      if (error) {
+        toast.error("Erreur lors de l'import : " + error.message);
+        hasError = true;
+        break;
+      }
+    }
+    if (!hasError) {
       setImportCount(data.length);
       setStep("done");
       toast.success(`${data.length} leads importés avec succès !`);
