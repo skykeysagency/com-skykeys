@@ -329,7 +329,8 @@ export default function Leads() {
           showCallNote={tab === "contacted"}
           callLogs={callLogs}
           onCallLead={(lead: any) => {
-            const leadsWithPhone = filtered.filter((l) => l.phone);
+            const excludedStatuses = ["contacte", "rdv_planifie", "proposition", "gagne", "perdu"];
+            const leadsWithPhone = filtered.filter((l) => l.phone && !excludedStatuses.includes(l.status));
             const idx = leadsWithPhone.findIndex((l) => l.id === lead.id);
             setCallModeStartIndex(idx >= 0 ? idx : 0);
             setCallModeLeads(leadsWithPhone);
