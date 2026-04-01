@@ -406,7 +406,8 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
               <div className="flex items-center gap-3">
                 <div className={`w-14 h-14 rounded-full border-4 ${callRingColors[callStatus]} flex items-center justify-center bg-primary/10 shrink-0 transition-all`}>
                   <span className="text-xl font-bold text-primary">
-                    {editForm.first_name?.charAt(0)}{editForm.last_name?.charAt(0)}
+                    {editForm.company ? editForm.company.charAt(0) : `${editForm.first_name?.charAt(0)}${editForm.last_name?.charAt(0)}`}
+                  </span>
                   </span>
                 </div>
                 <div>
