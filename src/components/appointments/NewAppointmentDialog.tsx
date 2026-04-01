@@ -93,7 +93,7 @@ function NewAppointmentDialog({
   const isWeekendDate = (dateStr: string) => {
     if (!dateStr) return false;
     const dow = new Date(dateStr).getDay();
-    return dow === 0 || dow === 5 || dow === 6;
+    return dow === 0 || dow === 6;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
