@@ -93,7 +93,7 @@ function NewAppointmentDialog({
   const isWeekendDate = (dateStr: string) => {
     if (!dateStr) return false;
     const dow = new Date(dateStr).getDay();
-    return dow === 0 || dow === 5 || dow === 6;
+    return dow === 0 || dow === 6;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -101,7 +101,7 @@ function NewAppointmentDialog({
     if (!user) return;
 
     if (isWeekendDate(form.start_at)) {
-      toast.error("Les rendez-vous ne sont pas disponibles le vendredi, samedi et dimanche.");
+      toast.error("Les rendez-vous ne sont pas disponibles le samedi et dimanche.");
       return;
     }
 
@@ -514,7 +514,7 @@ function Label({ children }: { children: React.ReactNode }) {
 }
 
 // ── DateTimePicker ──────────────────────────────────────────────────
-const BLOCKED_DOW = [0, 5, 6]; // dimanche, vendredi, samedi
+const BLOCKED_DOW = [0, 6]; // dimanche, samedi
 
 const TIME_SLOTS = Array.from({ length: (19 - 8) * 4 }, (_, i) => {
   const totalMins = 8 * 60 + i * 15;
@@ -590,7 +590,7 @@ function DateTimePicker({
           />
           {dateVal && isBlockedDay(dateVal) && (
             <p className="px-3 pb-3 text-xs text-destructive font-medium">
-              Vendredi, samedi et dimanche non disponibles.
+              Samedi et dimanche non disponibles.
             </p>
           )}
         </PopoverContent>
