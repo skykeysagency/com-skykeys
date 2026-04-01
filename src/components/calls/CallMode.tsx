@@ -406,16 +406,16 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
               <div className="flex items-center gap-3">
                 <div className={`w-14 h-14 rounded-full border-4 ${callRingColors[callStatus]} flex items-center justify-center bg-primary/10 shrink-0 transition-all`}>
                   <span className="text-xl font-bold text-primary">
-                    {editForm.first_name?.charAt(0)}{editForm.last_name?.charAt(0)}
+                    {editForm.company ? editForm.company.charAt(0) : `${editForm.first_name?.charAt(0)}${editForm.last_name?.charAt(0)}`}
                   </span>
                 </div>
                 <div>
                   <p className="font-semibold text-foreground text-base">
-                    {editForm.first_name} {editForm.last_name}
+                    {editForm.company || `${editForm.first_name} ${editForm.last_name}`}
                   </p>
                   {editForm.company && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Building className="w-3 h-3" /> {editForm.company}
+                    <p className="text-xs text-muted-foreground">
+                      {editForm.first_name} {editForm.last_name}
                     </p>
                   )}
                 </div>
@@ -477,7 +477,7 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
                 {editForm.phone || "—"}
               </p>
               <p className="text-sm text-muted-foreground">
-                {lead.company ? `${lead.first_name} ${lead.last_name} · ${lead.company}` : `${lead.first_name} ${lead.last_name}`}
+                {lead.company || `${lead.first_name} ${lead.last_name}`}
               </p>
             </div>
 
@@ -687,11 +687,11 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0
                       ${i === index ? "bg-white/20 text-white" : "bg-primary/10 text-primary"}
                     `}>
-                      {l.first_name?.charAt(0)}{l.last_name?.charAt(0)}
+                      {l.company ? l.company.charAt(0) : `${l.first_name?.charAt(0)}${l.last_name?.charAt(0)}`}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className={`font-medium text-xs truncate ${i === index ? "text-white" : ""}`}>
-                        {l.first_name} {l.last_name}
+                        {l.company || `${l.first_name} ${l.last_name}`}
                       </p>
                       {l.phone && (
                         <p className={`text-[10px] truncate ${i === index ? "text-white/70" : "text-muted-foreground"}`}>
