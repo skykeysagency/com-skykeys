@@ -101,7 +101,7 @@ function NewAppointmentDialog({
     if (!user) return;
 
     if (isWeekendDate(form.start_at)) {
-      toast.error("Les rendez-vous ne sont pas disponibles le vendredi, samedi et dimanche.");
+      toast.error("Les rendez-vous ne sont pas disponibles le samedi et dimanche.");
       return;
     }
 
