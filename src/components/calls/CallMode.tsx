@@ -478,7 +478,7 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
                 {editForm.phone || "—"}
               </p>
               <p className="text-sm text-muted-foreground">
-                {lead.company ? `${lead.first_name} ${lead.last_name} · ${lead.company}` : `${lead.first_name} ${lead.last_name}`}
+                {lead.company || `${lead.first_name} ${lead.last_name}`}
               </p>
             </div>
 
