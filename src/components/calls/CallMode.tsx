@@ -412,11 +412,11 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
                 </div>
                 <div>
                   <p className="font-semibold text-foreground text-base">
-                    {editForm.first_name} {editForm.last_name}
+                    {editForm.company || `${editForm.first_name} ${editForm.last_name}`}
                   </p>
                   {editForm.company && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Building className="w-3 h-3" /> {editForm.company}
+                    <p className="text-xs text-muted-foreground">
+                      {editForm.first_name} {editForm.last_name}
                     </p>
                   )}
                 </div>
