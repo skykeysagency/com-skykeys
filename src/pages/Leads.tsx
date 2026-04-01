@@ -212,7 +212,7 @@ export default function Leads() {
             <PhoneCall className="w-3.5 h-3.5" />
             Mode appel
             <span className="ml-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-              {filtered.filter(l => l.phone).length}
+              {filtered.filter(l => l.phone && !["contacte", "rdv_planifie", "proposition", "gagne", "perdu"].includes(l.status)).length}
             </span>
           </Button>
           <Button size="sm" className="gap-2 h-9 shadow-primary gradient-primary text-white border-0 hover:opacity-90" onClick={() => setShowNewLead(true)}>
