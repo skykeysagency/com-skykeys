@@ -688,11 +688,11 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0
                       ${i === index ? "bg-white/20 text-white" : "bg-primary/10 text-primary"}
                     `}>
-                      {l.first_name?.charAt(0)}{l.last_name?.charAt(0)}
+                      {l.company ? l.company.charAt(0) : `${l.first_name?.charAt(0)}${l.last_name?.charAt(0)}`}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className={`font-medium text-xs truncate ${i === index ? "text-white" : ""}`}>
-                        {l.first_name} {l.last_name}
+                        {l.company || `${l.first_name} ${l.last_name}`}
                       </p>
                       {l.phone && (
                         <p className={`text-[10px] truncate ${i === index ? "text-white/70" : "text-muted-foreground"}`}>
