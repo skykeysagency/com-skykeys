@@ -367,22 +367,52 @@ function NewAppointmentDialog({
                   </TabsList>
 
                   <TabsContent value="existing" className="mt-2">
-                    <Select
-                      value={form.lead_id}
-                      onValueChange={(v) => setForm({ ...form, lead_id: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un lead (optionnel)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {leads.map((l) => (
-                          <SelectItem key={l.id} value={l.id}>
-                            {l.first_name} {l.last_name}
-                            {l.company ? ` — ${l.company}` : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            "w-full justify-between font-normal",
+                            !form.lead_id && "text-muted-foreground"
+                          )}
+                        >
+                          {form.lead_id
+                            ? (() => {
+                                const l = leads.find((l) => l.id === form.lead_id);
+                                return l
+                                  ? `${l.company || `${l.first_name} ${l.last_name}`}`
+                                  : "Sélectionner un lead";
+                              })()
+                            : "Sélectionner un lead (optionnel)"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[200]" align="start">
+                        <Command>
+                          <CommandInput placeholder="Rechercher entreprise, nom..." />
+                          <CommandList>
+                            <CommandEmpty>Aucun lead trouvé.</CommandEmpty>
+                            <CommandGroup>
+                              {leads.map((l) => (
+                                <CommandItem
+                                  key={l.id}
+                                  value={`${l.company || ""} ${l.first_name} ${l.last_name}`}
+                                  onSelect={() => setForm({ ...form, lead_id: l.id })}
+                                >
+                                  <Check className={cn("mr-2 h-4 w-4", form.lead_id === l.id ? "opacity-100" : "opacity-0")} />
+                                  <span className="truncate">
+                                    {l.company || `${l.first_name} ${l.last_name}`}
+                                    {l.company ? <span className="text-muted-foreground ml-1 text-xs">— {l.first_name} {l.last_name}</span> : null}
+                                  </span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </TabsContent>
 
                   <TabsContent value="new" className="mt-2 space-y-3">
