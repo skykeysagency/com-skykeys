@@ -200,9 +200,10 @@ export default function Leads() {
             size="sm"
             className="gap-2 h-9 text-emerald-700 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300"
             onClick={() => {
-              const leadsWithPhone = filtered.filter((l) => l.phone);
+              const excludedStatuses = ["contacte", "rdv_planifie", "proposition", "gagne", "perdu"];
+              const leadsWithPhone = filtered.filter((l) => l.phone && !excludedStatuses.includes(l.status));
               if (leadsWithPhone.length === 0) {
-                toast.error("Aucun lead avec un numéro de téléphone.");
+                toast.error("Aucun lead éligible avec un numéro de téléphone.");
                 return;
               }
               setCallModeLeads(leadsWithPhone);
