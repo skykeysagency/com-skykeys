@@ -590,7 +590,7 @@ function DateTimePicker({
           />
           {dateVal && isBlockedDay(dateVal) && (
             <p className="px-3 pb-3 text-xs text-destructive font-medium">
-              Vendredi, samedi et dimanche non disponibles.
+              Samedi et dimanche non disponibles.
             </p>
           )}
         </PopoverContent>

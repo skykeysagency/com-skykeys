@@ -519,7 +519,7 @@ export default function CalendarPage() {
     if ((e.target as HTMLElement).closest("[data-apt]")) return;
 
     if (isWeekend(day)) {
-      toast.info("Les rendez-vous ne sont pas disponibles le vendredi, samedi et dimanche.");
+      toast.info("Les rendez-vous ne sont pas disponibles le samedi et dimanche.");
       return;
     }
 
