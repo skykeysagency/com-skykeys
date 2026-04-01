@@ -408,7 +408,6 @@ export default function CallMode({ leads, startIndex = 0, onClose, onLeadUpdated
                   <span className="text-xl font-bold text-primary">
                     {editForm.company ? editForm.company.charAt(0) : `${editForm.first_name?.charAt(0)}${editForm.last_name?.charAt(0)}`}
                   </span>
-                  </span>
                 </div>
                 <div>
                   <p className="font-semibold text-foreground text-base">
