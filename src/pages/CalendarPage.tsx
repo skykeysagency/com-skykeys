@@ -509,10 +509,10 @@ export default function CalendarPage() {
     return toDatetimeLocal(d);
   };
 
-  // 5 = vendredi, 6 = samedi, 0 = dimanche
+  // 6 = samedi, 0 = dimanche
   const isWeekend = (day: Date) => {
     const dow = day.getDay();
-    return dow === 0 || dow === 5 || dow === 6;
+    return dow === 0 || dow === 6;
   };
 
   const handleSlotClick = useCallback((e: React.MouseEvent<HTMLDivElement>, day: Date) => {
