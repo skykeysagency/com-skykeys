@@ -514,7 +514,7 @@ function Label({ children }: { children: React.ReactNode }) {
 }
 
 // ── DateTimePicker ──────────────────────────────────────────────────
-const BLOCKED_DOW = [0, 5, 6]; // dimanche, vendredi, samedi
+const BLOCKED_DOW = [0, 6]; // dimanche, samedi
 
 const TIME_SLOTS = Array.from({ length: (19 - 8) * 4 }, (_, i) => {
   const totalMins = 8 * 60 + i * 15;
