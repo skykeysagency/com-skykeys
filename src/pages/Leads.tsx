@@ -201,7 +201,7 @@ export default function Leads() {
             className="gap-2 h-9 text-emerald-700 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300"
             onClick={() => {
               const excludedStatuses = ["contacte", "rdv_planifie", "proposition", "gagne", "perdu"];
-              const leadsWithPhone = filtered.filter((l) => l.phone && !excludedStatuses.includes(l.status));
+              const leadsWithPhone = filtered.filter((l) => l.phone && !l.phone.includes("#ERROR") && !excludedStatuses.includes(l.status));
               if (leadsWithPhone.length === 0) {
                 toast.error("Aucun lead éligible avec un numéro de téléphone.");
                 return;
@@ -212,7 +212,7 @@ export default function Leads() {
             <PhoneCall className="w-3.5 h-3.5" />
             Mode appel
             <span className="ml-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-              {filtered.filter(l => l.phone && !["contacte", "rdv_planifie", "proposition", "gagne", "perdu"].includes(l.status)).length}
+              {filtered.filter(l => l.phone && !l.phone.includes("#ERROR") && !["contacte", "rdv_planifie", "proposition", "gagne", "perdu"].includes(l.status)).length}
             </span>
           </Button>
           <Button size="sm" className="gap-2 h-9 shadow-primary gradient-primary text-white border-0 hover:opacity-90" onClick={() => setShowNewLead(true)}>
@@ -330,7 +330,7 @@ export default function Leads() {
           callLogs={callLogs}
           onCallLead={(lead: any) => {
             const excludedStatuses = ["contacte", "rdv_planifie", "proposition", "gagne", "perdu"];
-            const leadsWithPhone = filtered.filter((l) => l.phone && !excludedStatuses.includes(l.status));
+            const leadsWithPhone = filtered.filter((l) => l.phone && !l.phone.includes("#ERROR") && !excludedStatuses.includes(l.status));
             const idx = leadsWithPhone.findIndex((l) => l.id === lead.id);
             setCallModeStartIndex(idx >= 0 ? idx : 0);
             setCallModeLeads(leadsWithPhone);
@@ -436,7 +436,7 @@ function LeadsTable({ leads, onSort, SortIcon, onRefresh, loaderRef, hasMore, se
                     </div>
                     <div>
                       <p className="font-semibold text-foreground group-hover:text-primary transition-colors text-sm">
-                        {lead.company ?? "—"}
+                        {lead.company || (lead.first_name || lead.last_name ? `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim() : "—")}
                       </p>
                       {lead.position && <p className="text-xs text-muted-foreground">{lead.position}</p>}
                       {lead.website && (
