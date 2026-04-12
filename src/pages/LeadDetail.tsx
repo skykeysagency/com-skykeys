@@ -22,6 +22,8 @@ import NewAppointmentDialog from "@/components/appointments/NewAppointmentDialog
 
 function getCallStatusBadge(status: string | null) {
   if (status === "completed") return <Badge variant="outline" className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 border-emerald-200 px-1.5 py-0">Effectué</Badge>;
+  if (status === "answered")  return <Badge variant="outline" className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 border-emerald-200 px-1.5 py-0">Répondu</Badge>;
+  if (status === "no_answer") return <Badge variant="outline" className="text-[10px] font-semibold bg-rose-50 text-rose-700 border-rose-200 px-1.5 py-0">Pas de réponse</Badge>;
   if (status === "missed")    return <Badge variant="outline" className="text-[10px] font-semibold bg-rose-50 text-rose-700 border-rose-200 px-1.5 py-0">Manqué</Badge>;
   if (status === "failed")    return <Badge variant="outline" className="text-[10px] font-semibold bg-rose-50 text-rose-700 border-rose-200 px-1.5 py-0">Échoué</Badge>;
   if (status === "voicemail") return <Badge variant="outline" className="text-[10px] font-semibold bg-amber-50 text-amber-700 border-amber-200 px-1.5 py-0">Messagerie</Badge>;
@@ -29,13 +31,13 @@ function getCallStatusBadge(status: string | null) {
 }
 
 function getCallIcon(status: string | null) {
-  if (status === "missed" || status === "failed") return <PhoneMissed className="w-3.5 h-3.5 text-rose-500" />;
+  if (status === "missed" || status === "failed" || status === "no_answer") return <PhoneMissed className="w-3.5 h-3.5 text-rose-500" />;
   if (status === "voicemail") return <PhoneOff className="w-3.5 h-3.5 text-amber-500" />;
   return <PhoneCall className="w-3.5 h-3.5 text-green-600" />;
 }
 
 function getCallDotClass(status: string | null) {
-  if (status === "missed" || status === "failed") return "bg-rose-100";
+  if (status === "missed" || status === "failed" || status === "no_answer") return "bg-rose-100";
   if (status === "voicemail") return "bg-amber-100";
   return "bg-green-100";
 }
