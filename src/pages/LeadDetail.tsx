@@ -255,9 +255,11 @@ export default function LeadDetail() {
             <h1 className="text-xl font-bold text-foreground">{displayName}</h1>
             <StatusBadge status={lead.status} />
           </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {lead.company ?? ""}{lead.company && lead.position ? " · " : ""}{lead.position ?? ""}
-          </p>
+          {(hasName || lead.position) && (
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {hasName && lead.company ? lead.company : ""}{(hasName && lead.company && lead.position) ? " · " : ""}{lead.position ?? ""}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
