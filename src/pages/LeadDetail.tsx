@@ -228,7 +228,11 @@ export default function LeadDetail() {
     <div className="p-8 text-center text-muted-foreground">Lead introuvable</div>
   );
 
-  const initials = `${lead.first_name?.charAt(0) ?? ""}${lead.last_name?.charAt(0) ?? ""}`.toUpperCase();
+  const hasName = !!(lead.first_name?.trim() || lead.last_name?.trim());
+  const displayName = hasName ? `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim() : (lead.company || "—");
+  const initials = hasName
+    ? `${lead.first_name?.charAt(0) ?? ""}${lead.last_name?.charAt(0) ?? ""}`.toUpperCase()
+    : (lead.company?.charAt(0) ?? "?").toUpperCase();
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-5xl">
@@ -248,7 +252,7 @@ export default function LeadDetail() {
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-xl font-bold text-foreground">{lead.first_name} {lead.last_name}</h1>
+            <h1 className="text-xl font-bold text-foreground">{displayName}</h1>
             <StatusBadge status={lead.status} />
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -558,7 +562,7 @@ export default function LeadDetail() {
         onClose={() => setShowApptDialog(false)}
         onCreated={fetchAll}
         defaultLeadId={lead.id}
-        defaultLeadName={`${lead.first_name} ${lead.last_name}`}
+        defaultLeadName={displayName}
       />
     </div>
   );
