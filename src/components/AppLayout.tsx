@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
+import AppointmentReminderModal from "./AppointmentReminderModal";
 import { Loader2 } from "lucide-react";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -25,6 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 overflow-auto scrollbar-thin">
         {children}
       </main>
+      <AppointmentReminderModal />
     </div>
   );
 }
