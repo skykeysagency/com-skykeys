@@ -377,16 +377,19 @@ export default function AdminPage() {
   });
 
   const getCallStatusIcon = (status: string | null) => {
-    if (status === "completed") return <PhoneCall className="w-3.5 h-3.5 text-emerald-600" />;
-    if (status === "missed") return <PhoneMissed className="w-3.5 h-3.5 text-rose-500" />;
-    if (status === "failed") return <PhoneOff className="w-3.5 h-3.5 text-rose-500" />;
+    if (status === "completed" || status === "answered") return <PhoneCall className="w-3.5 h-3.5 text-emerald-600" />;
+    if (status === "missed" || status === "failed" || status === "no_answer") return <PhoneMissed className="w-3.5 h-3.5 text-rose-500" />;
+    if (status === "voicemail") return <PhoneOff className="w-3.5 h-3.5 text-amber-500" />;
     return <Phone className="w-3.5 h-3.5 text-muted-foreground" />;
   };
 
   const getCallStatusBadge = (status: string | null) => {
     if (status === "completed") return <Badge variant="outline" className="text-[11px] font-semibold bg-emerald-50 text-emerald-700 border-emerald-200">Effectué</Badge>;
+    if (status === "answered") return <Badge variant="outline" className="text-[11px] font-semibold bg-emerald-50 text-emerald-700 border-emerald-200">Répondu</Badge>;
+    if (status === "no_answer") return <Badge variant="outline" className="text-[11px] font-semibold bg-rose-50 text-rose-700 border-rose-200">Pas de réponse</Badge>;
     if (status === "missed") return <Badge variant="outline" className="text-[11px] font-semibold bg-rose-50 text-rose-700 border-rose-200">Manqué</Badge>;
     if (status === "failed") return <Badge variant="outline" className="text-[11px] font-semibold bg-rose-50 text-rose-700 border-rose-200">Échoué</Badge>;
+    if (status === "voicemail") return <Badge variant="outline" className="text-[11px] font-semibold bg-amber-50 text-amber-700 border-amber-200">Messagerie</Badge>;
     return <Badge variant="outline" className="text-[11px] font-semibold">{status ?? "—"}</Badge>;
   };
 
