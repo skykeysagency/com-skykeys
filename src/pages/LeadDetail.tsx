@@ -228,11 +228,17 @@ export default function LeadDetail() {
     <div className="p-8 text-center text-muted-foreground">Lead introuvable</div>
   );
 
-  const hasName = !!(lead.first_name?.trim() || lead.last_name?.trim());
-  const displayName = hasName ? `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim() : (lead.company || "—");
+  const firstName = typeof lead.first_name === "string" ? lead.first_name.trim() : "";
+  const lastName = typeof lead.last_name === "string" ? lead.last_name.trim() : "";
+  const cleanFirstName = firstName.replace(/[-–—\s]/g, "") ? firstName : "";
+  const cleanLastName = lastName.replace(/[-–—\s]/g, "") ? lastName : "";
+  const hasName = !!(cleanFirstName || cleanLastName);
+  const displayName = hasName
+    ? [cleanFirstName, cleanLastName].filter(Boolean).join(" ")
+    : (lead.company?.trim() || "—");
   const initials = hasName
-    ? `${lead.first_name?.charAt(0) ?? ""}${lead.last_name?.charAt(0) ?? ""}`.toUpperCase()
-    : (lead.company?.charAt(0) ?? "?").toUpperCase();
+    ? [cleanFirstName, cleanLastName].filter(Boolean).map((value) => value.charAt(0)).join("").toUpperCase()
+    : (lead.company?.trim()?.charAt(0) ?? "?").toUpperCase();
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-5xl">
