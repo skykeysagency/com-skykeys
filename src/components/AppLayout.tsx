@@ -26,6 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 overflow-auto scrollbar-thin">
         {children}
       </main>
+      <AppointmentReminderModal />
     </div>
   );
 }
