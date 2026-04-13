@@ -53,12 +53,12 @@ export default function NewLeadDialog({ open, onClose, onCreated }: Props) {
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label>Prénom *</Label>
-              <Input placeholder="Jean" value={form.first_name} onChange={(e) => handleChange("first_name", e.target.value)} required />
+              <Label>Prénom</Label>
+              <Input placeholder="Jean" value={form.first_name} onChange={(e) => handleChange("first_name", e.target.value)} />
             </div>
             <div className="space-y-1">
-              <Label>Nom *</Label>
-              <Input placeholder="Dupont" value={form.last_name} onChange={(e) => handleChange("last_name", e.target.value)} required />
+              <Label>Nom</Label>
+              <Input placeholder="Dupont" value={form.last_name} onChange={(e) => handleChange("last_name", e.target.value)} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">

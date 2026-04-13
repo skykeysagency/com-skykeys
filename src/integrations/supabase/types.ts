@@ -191,9 +191,9 @@ export type Database = {
           company?: string | null
           created_at?: string
           email?: string | null
-          first_name: string
+          first_name?: string
           id?: string
-          last_name: string
+          last_name?: string
           notes?: string | null
           phone?: string | null
           position?: string | null
