@@ -237,19 +237,36 @@ function NewAppointmentDialog({
       lead_id: leadId,
     };
 
-    const { data: apptData, error } = await supabase
-      .from("appointments")
-      .insert([payload])
-      .select("id")
-      .single();
+    let apptData: { id: string } | null = null;
 
-    if (error) {
-      toast.error("Erreur lors de la création du RDV");
-      setLoading(false);
-      return;
+    if (isEdit && editAppointmentId) {
+      const { data, error } = await supabase
+        .from("appointments")
+        .update(payload)
+        .eq("id", editAppointmentId)
+        .select("id")
+        .single();
+      if (error) {
+        toast.error("Erreur lors de la mise à jour du RDV");
+        setLoading(false);
+        return;
+      }
+      apptData = data;
+    } else {
+      const { data, error } = await supabase
+        .from("appointments")
+        .insert([payload])
+        .select("id")
+        .single();
+      if (error) {
+        toast.error("Erreur lors de la création du RDV");
+        setLoading(false);
+        return;
+      }
+      apptData = data;
     }
 
-    if (leadId) {
+    if (leadId && !isEdit) {
       await supabase.from("activity_logs").insert({
         user_id: user.id,
         lead_id: leadId,
@@ -258,7 +275,7 @@ function NewAppointmentDialog({
       });
     }
 
-    // Create Google Meet if requested
+    // Create or update Google Meet event
     if (createMeet && apptData?.id) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
