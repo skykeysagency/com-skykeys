@@ -24,6 +24,7 @@ interface Props {
   defaultLeadId?: string;
   defaultLeadName?: string;
   defaultStartAt?: string;
+  editAppointmentId?: string;
 }
 
 const EMPTY_PROSPECT = {
