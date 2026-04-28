@@ -588,9 +588,9 @@ function NewAppointmentDialog({
               </Button>
               <Button type="submit" disabled={loading} className="gap-2">
                 {loading ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> {createMeet ? "Création + Meet…" : "Création…"}</>
+                  <><Loader2 className="w-4 h-4 animate-spin" /> {isEdit ? "Mise à jour…" : (createMeet ? "Création + Meet…" : "Création…")}</>
                 ) : (
-                  createMeet ? "Créer le RDV + Meet" : "Créer le RDV"
+                  isEdit ? (createMeet ? "Enregistrer + Meet" : "Enregistrer") : (createMeet ? "Créer le RDV + Meet" : "Créer le RDV")
                 )}
               </Button>
             </div>
