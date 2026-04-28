@@ -32,7 +32,7 @@ const EMPTY_PROSPECT = {
 };
 
 function NewAppointmentDialog({
-  open, onClose, onCreated, defaultLeadId, defaultLeadName, defaultStartAt,
+  open, onClose, onCreated, defaultLeadId, defaultLeadName, defaultStartAt, editAppointmentId,
 }: Props) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -41,6 +41,7 @@ function NewAppointmentDialog({
   const [prospect, setProspect] = useState(EMPTY_PROSPECT);
   const [createMeet, setCreateMeet] = useState(false);
   const [meetLink, setMeetLink] = useState<string | null>(null);
+  const [editingGoogleEventId, setEditingGoogleEventId] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     lead_id: defaultLeadId ?? "",
@@ -49,6 +50,7 @@ function NewAppointmentDialog({
     location: "",
     notes: "",
   });
+  const isEdit = !!editAppointmentId;
   // Track whether end_at has been auto-filled for the current start_at
   const autoFilledRef = useRef<string>("");
 
@@ -58,18 +60,49 @@ function NewAppointmentDialog({
     fetchLeads();
     setMeetLink(null);
     autoFilledRef.current = "";
-    setForm({
-      title: "",
-      lead_id: defaultLeadId ?? "",
-      start_at: defaultStartAt ?? "",
-      end_at: "",
-      location: "",
-      notes: "",
-    });
     setProspect(EMPTY_PROSPECT);
     setLeadMode("existing");
-    setCreateMeet(false);
-  }, [open, defaultLeadId, defaultStartAt]);
+
+    if (editAppointmentId) {
+      // Load existing appointment for editing
+      (async () => {
+        const { data } = await supabase
+          .from("appointments")
+          .select("*")
+          .eq("id", editAppointmentId)
+          .single();
+        if (data) {
+          const toLocal = (iso: string) => {
+            const d = new Date(iso);
+            const pad = (n: number) => String(n).padStart(2, "0");
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+          };
+          setForm({
+            title: data.title ?? "",
+            lead_id: data.lead_id ?? "",
+            start_at: toLocal(data.start_at),
+            end_at: toLocal(data.end_at),
+            location: data.location ?? "",
+            notes: data.notes ?? "",
+          });
+          autoFilledRef.current = toLocal(data.start_at);
+          setEditingGoogleEventId(data.google_event_id ?? null);
+          setCreateMeet(!!data.meeting_link);
+        }
+      })();
+    } else {
+      setForm({
+        title: "",
+        lead_id: defaultLeadId ?? "",
+        start_at: defaultStartAt ?? "",
+        end_at: "",
+        location: "",
+        notes: "",
+      });
+      setEditingGoogleEventId(null);
+      setCreateMeet(false);
+    }
+  }, [open, defaultLeadId, defaultStartAt, editAppointmentId]);
 
   // Auto-fill end_at = start_at + 1h (only once per start_at value, no form.end_at dep)
   useEffect(() => {
