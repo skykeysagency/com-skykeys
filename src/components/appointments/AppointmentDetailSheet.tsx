@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   CalendarDays, Clock, MapPin, User, Building2, Phone, Mail,
-  Briefcase, FileText, Globe, ExternalLink, Pencil, Trash2, Loader2, Video,
+  Briefcase, FileText, Globe, ExternalLink, Pencil, Trash2, Loader2, Video, Send,
 } from "lucide-react";
 import { format, parseISO, differenceInMinutes } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -17,6 +17,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import NewAppointmentDialog from "./NewAppointmentDialog";
 
 interface Props {
   appointmentId: string | null;
