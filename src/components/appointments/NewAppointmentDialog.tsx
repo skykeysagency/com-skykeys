@@ -295,26 +295,32 @@ function NewAppointmentDialog({
               attendee_email: leadEmail,
               attendee_name: leadName,
               appointment_id: apptData.id,
+              google_event_id: isEdit ? editingGoogleEventId : undefined,
             }),
           }
         );
         const meetData = await meetRes.json();
-        if (meetData.meet_link) {
-          setMeetLink(meetData.meet_link);
+        if (meetData.meet_link || (isEdit && editingGoogleEventId)) {
+          if (meetData.meet_link) setMeetLink(meetData.meet_link);
           onCreated();
-          toast.success("Lien Google Meet créé ! Invitation envoyée au client.");
+          toast.success(
+            isEdit
+              ? "Rendez-vous mis à jour ! Invitation renvoyée au client."
+              : "Lien Google Meet créé ! Invitation envoyée au client."
+          );
+          if (isEdit) onClose();
         } else {
-          toast.warning(meetData.error || "RDV créé mais Google Meet non généré.");
+          toast.warning(meetData.error || "RDV enregistré mais Google Meet non généré.");
           onCreated();
           onClose();
         }
       } catch {
-        toast.warning("RDV créé mais erreur lors de la création Google Meet.");
+        toast.warning("RDV enregistré mais erreur lors de la synchronisation Google Meet.");
         onCreated();
         onClose();
       }
     } else {
-      toast.success("Rendez-vous créé !");
+      toast.success(isEdit ? "Rendez-vous mis à jour !" : "Rendez-vous créé !");
       onCreated();
       onClose();
     }
