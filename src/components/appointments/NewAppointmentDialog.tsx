@@ -24,6 +24,7 @@ interface Props {
   defaultLeadId?: string;
   defaultLeadName?: string;
   defaultStartAt?: string;
+  editAppointmentId?: string;
 }
 
 const EMPTY_PROSPECT = {
@@ -31,7 +32,7 @@ const EMPTY_PROSPECT = {
 };
 
 function NewAppointmentDialog({
-  open, onClose, onCreated, defaultLeadId, defaultLeadName, defaultStartAt,
+  open, onClose, onCreated, defaultLeadId, defaultLeadName, defaultStartAt, editAppointmentId,
 }: Props) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -40,6 +41,7 @@ function NewAppointmentDialog({
   const [prospect, setProspect] = useState(EMPTY_PROSPECT);
   const [createMeet, setCreateMeet] = useState(false);
   const [meetLink, setMeetLink] = useState<string | null>(null);
+  const [editingGoogleEventId, setEditingGoogleEventId] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     lead_id: defaultLeadId ?? "",
@@ -48,6 +50,7 @@ function NewAppointmentDialog({
     location: "",
     notes: "",
   });
+  const isEdit = !!editAppointmentId;
   // Track whether end_at has been auto-filled for the current start_at
   const autoFilledRef = useRef<string>("");
 
@@ -57,18 +60,49 @@ function NewAppointmentDialog({
     fetchLeads();
     setMeetLink(null);
     autoFilledRef.current = "";
-    setForm({
-      title: "",
-      lead_id: defaultLeadId ?? "",
-      start_at: defaultStartAt ?? "",
-      end_at: "",
-      location: "",
-      notes: "",
-    });
     setProspect(EMPTY_PROSPECT);
     setLeadMode("existing");
-    setCreateMeet(false);
-  }, [open, defaultLeadId, defaultStartAt]);
+
+    if (editAppointmentId) {
+      // Load existing appointment for editing
+      (async () => {
+        const { data } = await supabase
+          .from("appointments")
+          .select("*")
+          .eq("id", editAppointmentId)
+          .single();
+        if (data) {
+          const toLocal = (iso: string) => {
+            const d = new Date(iso);
+            const pad = (n: number) => String(n).padStart(2, "0");
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+          };
+          setForm({
+            title: data.title ?? "",
+            lead_id: data.lead_id ?? "",
+            start_at: toLocal(data.start_at),
+            end_at: toLocal(data.end_at),
+            location: data.location ?? "",
+            notes: data.notes ?? "",
+          });
+          autoFilledRef.current = toLocal(data.start_at);
+          setEditingGoogleEventId(data.google_event_id ?? null);
+          setCreateMeet(!!data.meeting_link);
+        }
+      })();
+    } else {
+      setForm({
+        title: "",
+        lead_id: defaultLeadId ?? "",
+        start_at: defaultStartAt ?? "",
+        end_at: "",
+        location: "",
+        notes: "",
+      });
+      setEditingGoogleEventId(null);
+      setCreateMeet(false);
+    }
+  }, [open, defaultLeadId, defaultStartAt, editAppointmentId]);
 
   // Auto-fill end_at = start_at + 1h (only once per start_at value, no form.end_at dep)
   useEffect(() => {
@@ -146,13 +180,17 @@ function NewAppointmentDialog({
     const startAtUtc = new Date(form.start_at).toISOString();
     const endAtUtc = new Date(form.end_at || form.start_at).toISOString();
 
-    // Vérifier qu'aucun RDV CRM ne chevauche ce créneau (même utilisateur)
-    const { data: overlappingCrm } = await supabase
+    // Vérifier qu'aucun RDV CRM ne chevauche ce créneau (même utilisateur, hors le RDV en cours d'édition)
+    let overlapQuery = supabase
       .from("appointments")
       .select("id, title")
       .eq("user_id", user.id)
       .lt("start_at", endAtUtc)
       .gt("end_at", startAtUtc);
+    if (isEdit && editAppointmentId) {
+      overlapQuery = overlapQuery.neq("id", editAppointmentId);
+    }
+    const { data: overlappingCrm } = await overlapQuery;
     if (overlappingCrm?.length) {
       toast.error("Ce créneau chevauche un autre rendez-vous du CRM.");
       setLoading(false);
@@ -199,19 +237,36 @@ function NewAppointmentDialog({
       lead_id: leadId,
     };
 
-    const { data: apptData, error } = await supabase
-      .from("appointments")
-      .insert([payload])
-      .select("id")
-      .single();
+    let apptData: { id: string } | null = null;
 
-    if (error) {
-      toast.error("Erreur lors de la création du RDV");
-      setLoading(false);
-      return;
+    if (isEdit && editAppointmentId) {
+      const { data, error } = await supabase
+        .from("appointments")
+        .update(payload)
+        .eq("id", editAppointmentId)
+        .select("id")
+        .single();
+      if (error) {
+        toast.error("Erreur lors de la mise à jour du RDV");
+        setLoading(false);
+        return;
+      }
+      apptData = data;
+    } else {
+      const { data, error } = await supabase
+        .from("appointments")
+        .insert([payload])
+        .select("id")
+        .single();
+      if (error) {
+        toast.error("Erreur lors de la création du RDV");
+        setLoading(false);
+        return;
+      }
+      apptData = data;
     }
 
-    if (leadId) {
+    if (leadId && !isEdit) {
       await supabase.from("activity_logs").insert({
         user_id: user.id,
         lead_id: leadId,
@@ -220,7 +275,7 @@ function NewAppointmentDialog({
       });
     }
 
-    // Create Google Meet if requested
+    // Create or update Google Meet event
     if (createMeet && apptData?.id) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -240,26 +295,32 @@ function NewAppointmentDialog({
               attendee_email: leadEmail,
               attendee_name: leadName,
               appointment_id: apptData.id,
+              google_event_id: isEdit ? editingGoogleEventId : undefined,
             }),
           }
         );
         const meetData = await meetRes.json();
-        if (meetData.meet_link) {
-          setMeetLink(meetData.meet_link);
+        if (meetData.meet_link || (isEdit && editingGoogleEventId)) {
+          if (meetData.meet_link) setMeetLink(meetData.meet_link);
           onCreated();
-          toast.success("Lien Google Meet créé ! Invitation envoyée au client.");
+          toast.success(
+            isEdit
+              ? "Rendez-vous mis à jour ! Invitation renvoyée au client."
+              : "Lien Google Meet créé ! Invitation envoyée au client."
+          );
+          if (isEdit) onClose();
         } else {
-          toast.warning(meetData.error || "RDV créé mais Google Meet non généré.");
+          toast.warning(meetData.error || "RDV enregistré mais Google Meet non généré.");
           onCreated();
           onClose();
         }
       } catch {
-        toast.warning("RDV créé mais erreur lors de la création Google Meet.");
+        toast.warning("RDV enregistré mais erreur lors de la synchronisation Google Meet.");
         onCreated();
         onClose();
       }
     } else {
-      toast.success("Rendez-vous créé !");
+      toast.success(isEdit ? "Rendez-vous mis à jour !" : "Rendez-vous créé !");
       onCreated();
       onClose();
     }
@@ -277,8 +338,10 @@ function NewAppointmentDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Nouveau rendez-vous</DialogTitle>
-          <DialogDescription>Planifiez un RDV et associez-le à un lead.</DialogDescription>
+          <DialogTitle>{isEdit ? "Modifier le rendez-vous" : "Nouveau rendez-vous"}</DialogTitle>
+          <DialogDescription>
+            {isEdit ? "Mettez à jour les informations du RDV." : "Planifiez un RDV et associez-le à un lead."}
+          </DialogDescription>
         </DialogHeader>
 
         {meetLink ? (
@@ -525,9 +588,9 @@ function NewAppointmentDialog({
               </Button>
               <Button type="submit" disabled={loading} className="gap-2">
                 {loading ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> {createMeet ? "Création + Meet…" : "Création…"}</>
+                  <><Loader2 className="w-4 h-4 animate-spin" /> {isEdit ? "Mise à jour…" : (createMeet ? "Création + Meet…" : "Création…")}</>
                 ) : (
-                  createMeet ? "Créer le RDV + Meet" : "Créer le RDV"
+                  isEdit ? (createMeet ? "Enregistrer + Meet" : "Enregistrer") : (createMeet ? "Créer le RDV + Meet" : "Créer le RDV")
                 )}
               </Button>
             </div>

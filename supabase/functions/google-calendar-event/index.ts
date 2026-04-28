@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { title, start_at, end_at, attendee_email, attendee_name, notes, appointment_id } = await req.json();
+    const { title, start_at, end_at, attendee_email, attendee_name, notes, appointment_id, google_event_id, mode } = await req.json();
 
     const clientId = Deno.env.get("GOOGLE_ID_CLIENT");
     const clientSecret = Deno.env.get("GOOGLE_SECRET_ID");
@@ -99,37 +99,45 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create Google Calendar event with Meet conference
-    const eventRes = await fetch(
-      "https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1&sendUpdates=all",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
+    // Determine mode: create new event, or update existing (resend invitation)
+    const isUpdate = !!google_event_id;
+    const calendarUrl = isUpdate
+      ? `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(google_event_id)}?conferenceDataVersion=1&sendUpdates=all`
+      : `https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1&sendUpdates=all`;
+
+    const body: any = {
+      summary: title,
+      description: notes || "",
+      start: { dateTime: new Date(start_at).toISOString(), timeZone: "Europe/Paris" },
+      end: { dateTime: new Date(end_at).toISOString(), timeZone: "Europe/Paris" },
+      attendees,
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: "email", minutes: 60 },
+          { method: "popup", minutes: 15 },
+        ],
+      },
+    };
+
+    // Only request Meet creation when creating a new event (avoid wiping existing conference on update)
+    if (!isUpdate) {
+      body.conferenceData = {
+        createRequest: {
+          requestId: `skycall-${appointment_id || Date.now()}`,
+          conferenceSolutionKey: { type: "hangoutsMeet" },
         },
-        body: JSON.stringify({
-          summary: title,
-          description: notes || "",
-          start: { dateTime: new Date(start_at).toISOString(), timeZone: "Europe/Paris" },
-          end: { dateTime: new Date(end_at).toISOString(), timeZone: "Europe/Paris" },
-          attendees,
-          conferenceData: {
-            createRequest: {
-              requestId: `skycall-${appointment_id || Date.now()}`,
-              conferenceSolutionKey: { type: "hangoutsMeet" },
-            },
-          },
-          reminders: {
-            useDefault: false,
-            overrides: [
-              { method: "email", minutes: 60 },
-              { method: "popup", minutes: 15 },
-            ],
-          },
-        }),
-      }
-    );
+      };
+    }
+
+    const eventRes = await fetch(calendarUrl, {
+      method: isUpdate ? "PATCH" : "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
 
     const eventData = await eventRes.json();
     if (!eventRes.ok) {

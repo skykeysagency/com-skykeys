@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   CalendarDays, Clock, MapPin, User, Building2, Phone, Mail,
-  Briefcase, FileText, Globe, ExternalLink, Pencil, Trash2, Loader2, Video,
+  Briefcase, FileText, Globe, ExternalLink, Pencil, Trash2, Loader2, Video, Send,
 } from "lucide-react";
 import { format, parseISO, differenceInMinutes } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -17,6 +17,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import NewAppointmentDialog from "./NewAppointmentDialog";
 
 interface Props {
   appointmentId: string | null;
@@ -63,6 +64,8 @@ export default function AppointmentDetailSheet({ appointmentId, open, onClose, o
   const [apt, setApt] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -93,6 +96,48 @@ export default function AppointmentDetailSheet({ appointmentId, open, onClose, o
       onClose();
     }
     setDeleting(false);
+  };
+
+  const handleResendInvitation = async () => {
+    if (!apt) return;
+    if (!apt.leads?.email) {
+      toast.error("Le prospect n'a pas d'adresse email.");
+      return;
+    }
+    setResending(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-event`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({
+            title: apt.title,
+            start_at: apt.start_at,
+            end_at: apt.end_at,
+            notes: apt.notes || "",
+            attendee_email: apt.leads.email,
+            attendee_name: `${apt.leads.first_name ?? ""} ${apt.leads.last_name ?? ""}`.trim() || apt.leads.company || apt.leads.email,
+            appointment_id: apt.id,
+            google_event_id: apt.google_event_id || undefined,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(apt.google_event_id ? "Invitation renvoyée au prospect !" : "Invitation envoyée au prospect !");
+        fetchAppointment();
+      } else {
+        toast.error(data.error || "Impossible d'envoyer l'invitation.");
+      }
+    } catch {
+      toast.error("Erreur lors de l'envoi de l'invitation.");
+    }
+    setResending(false);
   };
 
   const duration = apt
@@ -299,6 +344,29 @@ export default function AppointmentDetailSheet({ appointmentId, open, onClose, o
               <Button
                 size="sm"
                 variant="outline"
+                className="gap-1.5 text-xs font-semibold"
+                onClick={() => setEditOpen(true)}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Modifier
+              </Button>
+
+              {apt.leads?.email && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 text-xs font-semibold border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                  onClick={handleResendInvitation}
+                  disabled={resending}
+                >
+                  {resending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  {apt.google_event_id ? "Renvoyer l'invitation" : "Envoyer l'invitation"}
+                </Button>
+              )}
+
+              <Button
+                size="sm"
+                variant="outline"
                 className="gap-1.5 text-xs font-semibold ml-auto"
                 onClick={onClose}
               >
@@ -308,6 +376,18 @@ export default function AppointmentDetailSheet({ appointmentId, open, onClose, o
           </div>
         ) : null}
       </SheetContent>
+
+      {/* Edit dialog */}
+      <NewAppointmentDialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onCreated={() => {
+          setEditOpen(false);
+          fetchAppointment();
+          onDeleted(); // re-trigger parent refresh
+        }}
+        editAppointmentId={apt?.id}
+      />
     </Sheet>
   );
 }
