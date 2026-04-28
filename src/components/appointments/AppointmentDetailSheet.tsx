@@ -344,6 +344,29 @@ export default function AppointmentDetailSheet({ appointmentId, open, onClose, o
               <Button
                 size="sm"
                 variant="outline"
+                className="gap-1.5 text-xs font-semibold"
+                onClick={() => setEditOpen(true)}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Modifier
+              </Button>
+
+              {apt.leads?.email && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 text-xs font-semibold border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                  onClick={handleResendInvitation}
+                  disabled={resending}
+                >
+                  {resending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  {apt.google_event_id ? "Renvoyer l'invitation" : "Envoyer l'invitation"}
+                </Button>
+              )}
+
+              <Button
+                size="sm"
+                variant="outline"
                 className="gap-1.5 text-xs font-semibold ml-auto"
                 onClick={onClose}
               >
@@ -353,6 +376,18 @@ export default function AppointmentDetailSheet({ appointmentId, open, onClose, o
           </div>
         ) : null}
       </SheetContent>
+
+      {/* Edit dialog */}
+      <NewAppointmentDialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onCreated={() => {
+          setEditOpen(false);
+          fetchAppointment();
+          onDeleted(); // re-trigger parent refresh
+        }}
+        editAppointmentId={apt?.id}
+      />
     </Sheet>
   );
 }
