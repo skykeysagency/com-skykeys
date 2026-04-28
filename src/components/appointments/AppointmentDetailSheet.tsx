@@ -64,6 +64,8 @@ export default function AppointmentDetailSheet({ appointmentId, open, onClose, o
   const [apt, setApt] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -94,6 +96,48 @@ export default function AppointmentDetailSheet({ appointmentId, open, onClose, o
       onClose();
     }
     setDeleting(false);
+  };
+
+  const handleResendInvitation = async () => {
+    if (!apt) return;
+    if (!apt.leads?.email) {
+      toast.error("Le prospect n'a pas d'adresse email.");
+      return;
+    }
+    setResending(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-event`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({
+            title: apt.title,
+            start_at: apt.start_at,
+            end_at: apt.end_at,
+            notes: apt.notes || "",
+            attendee_email: apt.leads.email,
+            attendee_name: `${apt.leads.first_name ?? ""} ${apt.leads.last_name ?? ""}`.trim() || apt.leads.company || apt.leads.email,
+            appointment_id: apt.id,
+            google_event_id: apt.google_event_id || undefined,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(apt.google_event_id ? "Invitation renvoyée au prospect !" : "Invitation envoyée au prospect !");
+        fetchAppointment();
+      } else {
+        toast.error(data.error || "Impossible d'envoyer l'invitation.");
+      }
+    } catch {
+      toast.error("Erreur lors de l'envoi de l'invitation.");
+    }
+    setResending(false);
   };
 
   const duration = apt
