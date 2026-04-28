@@ -338,8 +338,10 @@ function NewAppointmentDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Nouveau rendez-vous</DialogTitle>
-          <DialogDescription>Planifiez un RDV et associez-le à un lead.</DialogDescription>
+          <DialogTitle>{isEdit ? "Modifier le rendez-vous" : "Nouveau rendez-vous"}</DialogTitle>
+          <DialogDescription>
+            {isEdit ? "Mettez à jour les informations du RDV." : "Planifiez un RDV et associez-le à un lead."}
+          </DialogDescription>
         </DialogHeader>
 
         {meetLink ? (
