@@ -180,13 +180,17 @@ function NewAppointmentDialog({
     const startAtUtc = new Date(form.start_at).toISOString();
     const endAtUtc = new Date(form.end_at || form.start_at).toISOString();
 
-    // Vérifier qu'aucun RDV CRM ne chevauche ce créneau (même utilisateur)
-    const { data: overlappingCrm } = await supabase
+    // Vérifier qu'aucun RDV CRM ne chevauche ce créneau (même utilisateur, hors le RDV en cours d'édition)
+    let overlapQuery = supabase
       .from("appointments")
       .select("id, title")
       .eq("user_id", user.id)
       .lt("start_at", endAtUtc)
       .gt("end_at", startAtUtc);
+    if (isEdit && editAppointmentId) {
+      overlapQuery = overlapQuery.neq("id", editAppointmentId);
+    }
+    const { data: overlappingCrm } = await overlapQuery;
     if (overlappingCrm?.length) {
       toast.error("Ce créneau chevauche un autre rendez-vous du CRM.");
       setLoading(false);
