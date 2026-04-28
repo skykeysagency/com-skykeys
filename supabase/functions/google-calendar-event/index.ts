@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { title, start_at, end_at, attendee_email, attendee_name, notes, appointment_id } = await req.json();
+    const { title, start_at, end_at, attendee_email, attendee_name, notes, appointment_id, google_event_id, mode } = await req.json();
 
     const clientId = Deno.env.get("GOOGLE_ID_CLIENT");
     const clientSecret = Deno.env.get("GOOGLE_SECRET_ID");
