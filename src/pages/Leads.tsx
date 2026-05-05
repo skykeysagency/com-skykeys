@@ -27,6 +27,14 @@ import CallMode from "@/components/calls/CallMode";
 
 type Tab = "all" | "contacted";
 
+// A phone is valid only if it contains enough digits to be dialable (≥6)
+const isValidPhone = (p: any): boolean => {
+  if (!p || typeof p !== "string") return false;
+  if (p.includes("#ERROR")) return false;
+  const digits = p.replace(/\D/g, "");
+  return digits.length >= 6;
+};
+
 type SortDir = "asc" | "desc";
 
 export default function Leads() {
